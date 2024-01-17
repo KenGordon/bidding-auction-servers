@@ -69,6 +69,8 @@ CreatePublicKeyFetcher(TrustedServersConfigClient& config_client) {
       server_common::CloudPlatform::kLocal;
 #if defined(CLOUD_PLATFORM_AWS)
   cloud_platform = server_common::CloudPlatform::kAws;
+#elif defined(CLOUD_PLATFORM_AZURE)
+  cloud_platform = server_common::CloudPlatform::kAzure;
 #elif defined(CLOUD_PLATFORM_GCP)
   cloud_platform = server_common::CloudPlatform::kGcp;
 #endif

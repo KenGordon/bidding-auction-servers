@@ -179,6 +179,7 @@ TEST(StartupParamParserTest, ParseMultiBuyerMap) {
         std::string url =
             absl::StrCat("dns:///bfe-dev.buyer", std::to_string(buyer_number),
                          "-frontend.com:443");
+        // AZURE_TODO: we might need to do something for azure
         CloudPlatform platform =
             (buyer_number % 2 == 0) ? CloudPlatform::kGcp : CloudPlatform::kAws;
         EXPECT_EQ(it->second.endpoint, url);

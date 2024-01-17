@@ -1,0 +1,30 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# CIPD commands to get the latest Bazel build tools
+parameters:
+  BazelInstallDirectory: "$(Agent.TempDirectory)/bazel"
+  BazelCipdVersion: "6.3.2.cr0"
+steps:
+- bash: |
+    set -euo pipefail
+    ensurefile=`mktemp`
+
+    echo "bazel version:${{ parameters.BazelCipdVersion }}" > "$ensurefile"
+
+    cipd auth-login
+    cipd ensure -ensure-file $ensurefile -root ${{ parameters.BazelInstallDirectory }}
+    rm "$ensurefile"
+
+  displayName: 'Download bazel package from cipd'

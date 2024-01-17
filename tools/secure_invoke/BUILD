@@ -83,6 +83,7 @@ cc_test(
     name = "secure_invoke_lib_test",
     size = "large",
     srcs = ["secure_invoke_lib_test.cc"],
+    linkstatic = 1,  # AZURE_TODO: Need to revert later. It allows run the test without docker. ./bazel-bin/tools/secure_invoke/secure_invoke_lib_test
     tags = [
         "flaky",
     ],

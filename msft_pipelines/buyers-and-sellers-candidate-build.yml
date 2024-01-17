@@ -1,0 +1,205 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Azure Ad Selection TEE Build $(Date:MM)-$(Date:dd)-$(Date:yyyy)$(Rev:_r)
+# We don't want CI or PR builds for changes to this pipeline.
+trigger: none
+pr: none
+parameters:
+  - name: BazelCipdVersion
+    type: string
+    default: "6.3.2.cr0"
+
+  - name: Platform
+    type: string
+    default: "azure"
+
+  - name: BuildFlavour
+    type: string
+    default: "prod"
+
+  - name: AuctionService
+    type: boolean
+    default: true
+
+  - name: BiddingService
+    type: boolean
+    default: false
+
+  - name: BuyerFrontendService
+    type: boolean
+    default: false
+
+  - name: SellerFrontendService
+    type: boolean
+    default: false
+
+  - name: Verbose
+    type: boolean
+    default: true
+
+variables:
+  System.Debug: true
+  DOCKER_BUILDKIT: 1
+
+# Resources for our 1ES EO compliance and scanning.
+resources:
+  repositories:
+  - repository: 1esPipelines
+    type: git
+    name: 1ESPipelineTemplates/1ESPipelineTemplates
+    ref: refs/tags/release
+
+extends:
+  # The pipeline extends the 1ES PT which will inject different SDL and compliance tasks.
+  # For non-production pipelines, use "Unofficial" as defined below.
+  # For productions pipelines, use "Official".
+  template: v1/1ES.Official.PipelineTemplate.yml@1esPipelines
+  parameters:
+    pool:
+      name: Ad-Selection-Tee-Build
+      image: 1ES-Mariner-Custom
+      os: linux
+    sdl:
+      sourceAnalysisPool:
+        name: Ad-Selection-Tee-Build
+        image: 1ES-Windows
+        os: windows
+      credscan:
+        suppressionsFile: $(Build.SourcesDirectory)/msft_pipelines/CredScanSuppressions.json
+    stages:
+      - stage: Build_And_Test
+        displayName: Build & Test TEE Images
+        jobs:
+        # Seller Auction service
+        - ${{ if parameters.AuctionService }}:
+          - job: AuctionService
+            displayName: Auction Service Build & Test
+            timeoutInMinutes: 120
+            # If the pipeline publishes artifacts, use `templateContext` to define the artifacts.
+            # This will enable 1ES PT to run SDL analysis tools on the artifacts and then upload them.
+            templateContext:
+              outputs:
+              - output: pipelineArtifact
+                targetPath: $(Agent.TempDirectory)/build_logs
+                artifactName: Auction Service Build Logs
+              - output: pipelineArtifact
+                targetPath: $(Agent.WorkFolder)/1/s/dist/debian/auction_service_image.tar
+                artifactName: Auction Service TEE Image
+              - output: pipelineArtifact
+                targetPath: $(Agent.WorkFolder)/1/s/dist/debian/auction_service_artifacts.zip
+                artifactName: Auction Service TEE Artifacts
+            steps:
+            - template: /msft_pipelines/templates/build-service-tee-image.yml@self
+              parameters:
+                Instance: 'local'
+                Platform: '${{ parameters.Platform }}'
+                BuildFlavour: '${{ parameters.BuildFlavour }}'
+                Service: 'auction_service'
+                Verbose: ${{ parameters.Verbose }}
+                BazelExtraArgs: ''
+                BazelCipdVersion: ${{ parameters.BazelCipdVersion }}
+
+        # Seller Bidding service
+        - ${{ if parameters.BiddingService }}:
+          - job: BiddingService
+            displayName: Bidding Service Build & Test
+            timeoutInMinutes: 120
+            templateContext:
+              outputs:
+              - output: pipelineArtifact
+                targetPath: $(Agent.TempDirectory)/build_logs
+                artifactName: Bidding Service Build Logs
+              - output: pipelineArtifact
+                targetPath: $(Agent.WorkFolder)/1/s/dist/debian/bidding_service_image.tar
+                artifactName: Bidding Service TEE Image
+              - output: pipelineArtifact
+                targetPath: $(Agent.WorkFolder)/1/s/dist/debian/bidding_service_artifacts.zip
+                artifactName: Bidding Service TEE Artifacts
+            steps:
+            - template: /msft_pipelines/templates/build-service-tee-image.yml@self
+              parameters:
+                Instance: 'local'
+                Platform: '${{ parameters.Platform }}'
+                BuildFlavour: '${{ parameters.BuildFlavour }}'
+                Service: 'bidding_service'
+                Verbose: ${{ parameters.Verbose }}
+                BazelExtraArgs: ''
+                BazelCipdVersion: ${{ parameters.BazelCipdVersion }}
+
+        # Seller Bidding service
+        - ${{ if parameters.BuyerFrontendService }}:
+          - job: BuyerFrontendService
+            displayName: Buyer Frontend Service Build & Test
+            timeoutInMinutes: 120
+            templateContext:
+              outputs:
+              - output: pipelineArtifact
+                targetPath: $(Agent.TempDirectory)/build_logs
+                artifactName: Buyer Frontend Service Build Logs
+              - output: pipelineArtifact
+                targetPath: $(Agent.WorkFolder)/1/s/dist/debian/buyer_frontend_service_image.tar
+                artifactName: Buyer Frontend Service TEE Image
+              - output: pipelineArtifact
+                targetPath: $(Agent.WorkFolder)/1/s/dist/debian/buyer_frontend_service_artifacts.zip
+                artifactName: Buyer Frontend Service TEE Artifacts
+            steps:
+            - template: /msft_pipelines/templates/build-service-tee-image.yml@self
+              parameters:
+                Instance: 'local'
+                Platform: '${{ parameters.Platform }}'
+                BuildFlavour: '${{ parameters.BuildFlavour }}'
+                Service: 'buyer_frontend_service'
+                Verbose: ${{ parameters.Verbose }}
+                BazelExtraArgs: ''
+                BazelCipdVersion: ${{ parameters.BazelCipdVersion }}
+
+        # Seller Bidding service
+        - ${{ if parameters.SellerFrontendService }}:
+          - job: SellerFrontendService
+            displayName: Seller Frontend Service Build & Test
+            timeoutInMinutes: 120
+            templateContext:
+              outputs:
+              - output: pipelineArtifact
+                targetPath: $(Agent.TempDirectory)/build_logs
+                artifactName: Seller Frontend Service Build Logs
+              - output: pipelineArtifact
+                targetPath: $(Agent.WorkFolder)/1/s/dist/debian/seller_frontend_service_image.tar
+                artifactName: Seller Frontend Service TEE Image
+              - output: pipelineArtifact
+                targetPath: $(Agent.WorkFolder)/1/s/dist/debian/seller_frontend_service_artifacts.zip
+                artifactName: Seller Frontend Service TEE Artifacts
+            steps:
+            - template: /msft_pipelines/templates/build-service-tee-image.yml@self
+              parameters:
+                Instance: 'local'
+                Platform: '${{ parameters.Platform }}'
+                BuildFlavour: '${{ parameters.BuildFlavour }}'
+                Service: 'seller_frontend_service'
+                Verbose: ${{ parameters.Verbose }}
+                BazelExtraArgs: ''
+                BazelCipdVersion: ${{ parameters.BazelCipdVersion }}
+
+      - stage: PublishTEEs
+        displayName: Publish TEEs
+        jobs:
+        - job: PublishRegistry
+          displayName: Publish to Container Registry
+          steps:
+          - powershell: echo "TBD - Publish to official MSFT container registry."
+        - job: RegisterKMS
+          displayName: Register with Azure KMS
+          steps:
+          - powershell: echo "TBD - Publish TEE hashes and attestation information to official Azure KMS."

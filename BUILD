@@ -20,8 +20,9 @@ string_flag(
     name = "instance",
     build_setting_default = "aws",
     values = [
-        "gcp",
         "aws",
+        "azure",
+        "gcp",
         "local",
     ],
 )

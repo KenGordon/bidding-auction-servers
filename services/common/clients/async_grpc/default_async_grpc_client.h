@@ -52,6 +52,8 @@ class DefaultAsyncGrpcClient
         encryption_enabled_(encryption_enabled) {
 #if defined(CLOUD_PLATFORM_AWS)
     cloud_platform_ = server_common::CloudPlatform::kAws;
+#elif defined(CLOUD_PLATFORM_AZURE)
+    cloud_platform_ = server_common::CloudPlatform::kAzure;
 #elif defined(CLOUD_PLATFORM_GCP)
     cloud_platform_ = server_common::CloudPlatform::kGcp;
 #else

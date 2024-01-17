@@ -35,6 +35,9 @@ cc_library(
                 "@google_privacysandbox_servers_common//:aws_instance": [
                     "-DCLOUD_PLATFORM_AWS=1",
                 ],
+                "@google_privacysandbox_servers_common//:azure_instance": [
+                    "-DCLOUD_PLATFORM_AZURE=1",
+                ],
                 "@google_privacysandbox_servers_common//:gcp_instance": [
                     "-DCLOUD_PLATFORM_GCP=1",
                 ],

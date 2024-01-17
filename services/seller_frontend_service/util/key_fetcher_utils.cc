@@ -55,6 +55,8 @@ ParseCloudPlatformPublicKeysMap(
       cloud_platform = server_common::CloudPlatform::kGcp;
     } else if (absl::EqualsIgnoreCase(cloud_platform_str, "AWS")) {
       cloud_platform = server_common::CloudPlatform::kAws;
+    } else if (absl::EqualsIgnoreCase(cloud_platform_str, "AZURE")) {
+      cloud_platform = server_common::CloudPlatform::kAzure;
     } else {
       return absl::InvalidArgumentError(
           absl::StrCat(kUnsupportedCloudPlatformValue, cloud_platform_str));
