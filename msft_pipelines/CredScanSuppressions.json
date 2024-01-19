@@ -1,9 +1,0 @@
-{
-  "tool": "Credential Scanner",
-  "suppressions": [
-    {
-      "hash": "Sa7OFTmZC8+JHz6nGxxaY+GrLGbX6ipw3R7N3jQCEDk=",
-      "_justification": "3P Open source resource. Used by test collateral localy only, self-signed, cannot access any resources."
-    }
-  ]
-}

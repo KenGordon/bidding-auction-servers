@@ -11,7 +11,7 @@ function get_docker_workspace_mount() {
   # determined by git or bazel or inspecting the filesystem itself. Instead, we
   # need to use docker to expose its mount info for the /src/workspace path.
   # determine the current container's ID
-  local -r CONTAINER_ID="$(cat /proc/self/cgroup | grep "docker" | sed s/\\//\\n/g | tail -1)"
+  local -r CONTAINER_ID="$(uname --nodename)"
   # use docker inspect to extract the current mount path for /src/workspace
   # this format string is a golang template (https://pkg.go.dev/text/template) processed
   # by docker's --format flag, per https://docs.docker.com/config/formatting/
