@@ -262,7 +262,6 @@ std::string PackagePlainTextGetBidsRequestToJson(const HpkeKeyset& keyset,
       std::make_unique<server_common::FakeKeyFetcherManager>(
           keyset.public_key, "unused", std::to_string(keyset.key_id));
   auto crypto_client = CreateCryptoClient();
-  // AZURE_TODO: What should we do for azure? GCP is always used here.
   auto secret_request =
       EncryptRequestWithHpke<GetBidsRequest::GetBidsRawRequest, GetBidsRequest>(
           std::make_unique<GetBidsRequest::GetBidsRawRequest>(
