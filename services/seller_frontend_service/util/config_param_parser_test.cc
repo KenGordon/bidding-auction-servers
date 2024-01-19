@@ -68,6 +68,23 @@ constexpr absl::string_view kBuyerHostMapForMultipleBuyers =
     }
     )json";
 
+constexpr absl::string_view kBuyerHostMapForMultipleBuyersAzure =
+    R"json(
+    {
+      "https://bid8.com": {
+        "url": "dns:///bfe-dev.buyer8-frontend.com:443",
+        "cloudPlatform": "AZURE"
+      },
+      "https://bid9.com": {
+        "url": "dns:///bfe-dev.buyer9-frontend.com:443",
+        "cloudPlatform": "AZURE"
+      },
+      "https://bid10.com": {
+        "url": "dns:///bfe-dev.buyer10-frontend.com:443",
+        "cloudPlatform": "AZURE"
+    }
+    )json";
+
 constexpr absl::string_view kBuyerHostMapForLocalhostBuyer =
     R"json(
     {
@@ -179,9 +196,36 @@ TEST(StartupParamParserTest, ParseMultiBuyerMap) {
         std::string url =
             absl::StrCat("dns:///bfe-dev.buyer", std::to_string(buyer_number),
                          "-frontend.com:443");
-        // AZURE_TODO: we might need to do something for azure
         CloudPlatform platform =
             (buyer_number % 2 == 0) ? CloudPlatform::kGcp : CloudPlatform::kAws;
+        EXPECT_EQ(it->second.endpoint, url);
+        EXPECT_EQ(it->second.cloud_platform, platform);
+        actual_buyer_async_client = class_under_test.Get(current_ig_owner);
+        EXPECT_NE(actual_buyer_async_client.get(), nullptr);
+      }
+    }
+  }
+}
+
+TEST(StartupParamParserTest, ParseMultiBuyerMapAzure) {
+  auto output = ParseIgOwnerToBfeDomainMap(kBuyerHostMapForMultipleBuyers);
+  ASSERT_TRUE(output.ok());
+  if (output.ok()) {
+    BuyerFrontEndAsyncClientFactory class_under_test(
+        output.value(), nullptr, nullptr, BuyerServiceClientConfig());
+
+    std::shared_ptr<const BuyerFrontEndAsyncClient> actual_buyer_async_client;
+    std::string current_ig_owner;
+    for (int buyer_number : {8, 9, 10}) {
+      current_ig_owner =
+          absl::StrCat("https://bid", std::to_string(buyer_number), ".com");
+      auto it = output.value().find(current_ig_owner);
+      EXPECT_NE(it, output.value().end());
+      if (it != output.value().end()) {
+        std::string url =
+            absl::StrCat("dns:///bfe-dev.buyer", std::to_string(buyer_number),
+                         "-frontend.com:443");
+        CloudPlatform platform = CloudPlatform::kAzure;
         EXPECT_EQ(it->second.endpoint, url);
         EXPECT_EQ(it->second.cloud_platform, platform);
         actual_buyer_async_client = class_under_test.Get(current_ig_owner);
