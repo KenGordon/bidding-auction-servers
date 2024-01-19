@@ -38,4 +38,4 @@ export GLOG_stderrthreshold=0
 export GRPC_DNS_RESOLVER=native
 
 # Start the server.
-/server/bin/server  --fromenv=init_config_client,port,auction_server_host,key_value_signals_host,seller_origin_domain,buyer_server_hosts,enable_seller_frontend_benchmarking,score_ads_rpc_timeout_ms,get_bid_rpc_timeout_ms,key_value_signals_fetch_rpc_timeout_ms,create_new_event_engine,enable_encryption,test_mode,telemetry_config,enable_otel_based_logging,consented_debug_token,enable_protected_app_signals
+/server/bin/server  --init_config_client=true

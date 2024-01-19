@@ -51,9 +51,10 @@ declare -i NO_PLATFORM_BUILD=0
 declare -a AMI_REGIONS
 declare GCP_IMAGE_TAG
 declare GCP_IMAGE_REPO
+declare -i GCP_SKIP_IMAGE_UPLOAD=0
 declare AZURE_IMAGE_TAG
 declare AZURE_IMAGE_REPO
-declare -i GCP_SKIP_IMAGE_UPLOAD=0
+declare -i AZURE_SKIP_IMAGE_UPLOAD=0
 declare -a BUILD_TARGETS=(
   "//tools/secure_invoke/..."
 )
@@ -88,6 +89,11 @@ If platform is gcp:
     --gcp-image-tag              [REQUIRED if no --gcp-skip-image-upload] (All lowercase) Custom image tag for GCP image.
     --gcp-image-repo             [REQUIRED if no --gcp-skip-image-upload] The target repo for TEE image upload. Ex: us-docker.pkg.dev/my-project-id/services
 
+If platform is azure:
+    --azure-skip-image-upload      Skip AZURE image upload (and sha256 recording).
+    --azure-image-tag              [REQUIRED if no --azure-skip-image-upload] (All lowercase) Custom image tag for Azure image.
+    --azure-image-repo             [REQUIRED if no --azure-skip-image-upload] The target repo for TEE image upload.
+
 environment variables (all optional):
     WORKSPACE                    Set the path to the workspace (repo root)
     BAZEL_STARTUP_ARGS           Additional startup arguments to pass to bazel invocations
@@ -113,6 +119,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --gcp-skip-image-upload)
       GCP_SKIP_IMAGE_UPLOAD=1
+      shift
+      ;;
+    --azure-skip-image-upload)
+      AZURE_SKIP_IMAGE_UPLOAD=1
       shift
       ;;
     --no-platform-build)
@@ -188,6 +198,18 @@ if [[ ${PLATFORM} = gcp ]]; then
     fi
     if [[ -z ${GCP_IMAGE_REPO} ]]; then
       printf "Error: --gcp-image-repo must be specified\n" &>/dev/stderr
+      usage
+    fi
+  fi
+fi
+if [[ ${PLATFORM} = azure ]]; then
+  if [[ ${AZURE_SKIP_IMAGE_UPLOAD} -eq 0 ]]; then
+    if [[ -z ${AZURE_IMAGE_TAG} ]]; then
+      printf "Error: --azure-image-tag must be specified\n" &>/dev/stderr
+      usage
+    fi
+    if [[ -z ${AZURE_IMAGE_REPO} ]]; then
+      printf "Error: --azure-image-repo must be specified\n" &>/dev/stderr
       usage
     fi
   fi
@@ -309,13 +331,19 @@ function build_service_for_azure() {
     printf "Error: docker image tar file not found: %s\n" "${docker_image}" &>/dev/stderr
     exit 1
   fi
-  # shellcheck disable=SC2086
-  "${SCRIPT_DIR}"/azure/build_and_test ${VERBOSE_ARG} \
-  --server-image "${docker_image}" \
-  --service-path "${service}" \
-  --azure-image-tag "${AZURE_IMAGE_TAG}" \
-  --azure-image-repo "${AZURE_IMAGE_REPO}"
+  create_azure_dist "${docker_image}"
+  if [[ ${AZURE_SKIP_IMAGE_UPLOAD} -eq 1 ]]; then
+    printf "==== Skipping default repo image upload. No image_digest will be recorded.  =====\n"
+  else
+    upload_image_to_repo \
+    "${service}" \
+    "${docker_image}" \
+    "${AZURE_IMAGE_REPO}" \
+    "${AZURE_IMAGE_TAG}" \
+    "${BUILD_FLAVOR}"
+  fi
 }
+
 function load_service_image() {
   declare -r service="$1"
   declare -r docker_image=dist/debian/${service}_image.tar
@@ -352,6 +380,7 @@ if [[ ${NO_PLATFORM_BUILD} -eq 0 ]]; then
     ;;
 
     azure)
+      source  "${SCRIPT_DIR}"/azure/lib_azure_artifacts.sh
       for svc in "${SERVICES[@]}"; do
         build_service_for_azure "${svc}"
       done
