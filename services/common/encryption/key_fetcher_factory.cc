@@ -111,15 +111,16 @@ std::unique_ptr<KeyFetcherManagerInterface> CreateKeyFetcherManager(
   if (config_client.HasParameter(SECONDARY_COORDINATOR_PRIVATE_KEY_ENDPOINT)) {
     google::scp::cpio::PrivateKeyVendingEndpoint secondary;
 
-    secondary.account_identity =
-        config_client.GetStringParameter(SECONDARY_COORDINATOR_ACCOUNT_IDENTITY);
+    secondary.account_identity = config_client.GetStringParameter(
+        SECONDARY_COORDINATOR_ACCOUNT_IDENTITY);
     secondary.private_key_vending_service_endpoint =
         config_client.GetStringParameter(
             SECONDARY_COORDINATOR_PRIVATE_KEY_ENDPOINT);
     secondary.service_region =
         config_client.GetStringParameter(SECONDARY_COORDINATOR_REGION);
 
-    if (config_client.HasParameter(GCP_PRIMARY_WORKLOAD_IDENTITY_POOL_PROVIDER)) {
+    if (config_client.HasParameter(
+            GCP_PRIMARY_WORKLOAD_IDENTITY_POOL_PROVIDER)) {
       secondary.gcp_private_key_vending_service_cloudfunction_url =
           config_client.GetStringParameter(
               GCP_SECONDARY_KEY_SERVICE_CLOUD_FUNCTION_URL);
