@@ -128,8 +128,8 @@ CreateKeyFetcherManager(
         kDefaultPrivateKeyCacheTtlSeconds,
     const unsigned int key_refresh_flow_run_frequency_seconds =
         kDefaultKeyRefreshFlowRunFrequencySeconds) {
-  google::scp::cpio::PrivateKeyVendingEndpoint primary, secondary;
-  // AZURE_TODO: We might have to specify more fields for primary, secondary.
+  google::scp::cpio::PrivateKeyVendingEndpoint primary;
+  // AZURE_TODO: We might have to specify more fields for primary.
   //             See services/common/encryption/key_fetcher_factory.cc for what
   //             the original code does
 
@@ -139,7 +139,7 @@ CreateKeyFetcherManager(
   absl::Duration private_key_ttl = absl::Seconds(private_key_cache_ttl_seconds);
   std::unique_ptr<server_common::PrivateKeyFetcherInterface>
       private_key_fetcher = server_common::PrivateKeyFetcherFactory::Create(
-          primary, {secondary}, private_key_ttl);
+          primary, {}, private_key_ttl);
 
   absl::Duration key_refresh_flow_run_freq =
       absl::Seconds(key_refresh_flow_run_frequency_seconds);
