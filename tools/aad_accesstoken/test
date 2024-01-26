@@ -11,5 +11,5 @@ cd $PROJECT_ROOT
 PRIVACY_SANDBOX_DEV_DIR=$PROJECT_ROOT/..
 COMMAND="bazel"
 
-$COMMAND build //tools/aad_accesstoken:aad_accesstoken --sandbox_debug --config=azure_azure --//:build_flavor=non_prod
+$COMMAND build -c dbg //tools/aad_accesstoken:aad_accesstoken --sandbox_debug --config=azure_azure --//:build_flavor=non_prod
 ./bazel-bin/tools/aad_accesstoken/aad_accesstoken --client_secret=""

@@ -23,15 +23,20 @@
 #include "absl/flags/parse.h"
 #include "absl/strings/escaping.h"
 #include "absl/synchronization/blocking_counter.h"
+#include "absl/synchronization/notification.h"
+#include "core/curl_client/src/http1_curl_client.h"
 #include "core/utils/src/base64.h"
+#include "cpio/client_providers/global_cpio/src/global_cpio.h"
 #include "glog/logging.h"
 #include "gtest/gtest.h"
 #include "public/cpio/interface/cpio.h"
 #include "quiche/common/quiche_random.h"
 #include "quiche/oblivious_http/oblivious_http_client.h"
+#include "scp/cc/core/curl_client/src/http1_curl_wrapper.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/cpp/accesstoken/src/accesstoken_fetcher_manager.h"
 #include "src/cpp/concurrent/event_engine_executor.h"
+constexpr absl::Duration kRequestTimeout = absl::Seconds(10);
 
 ABSL_FLAG(std::string, aad_endpoint,
           "https://login.microsoftonline.com/"
@@ -66,140 +71,17 @@ static constexpr unsigned int kDefaultPrivateKeyCacheTtlSeconds = 3888000;
 // services/common/constants/common_service_flags.cc
 static constexpr unsigned int kDefaultKeyRefreshFlowRunFrequencySeconds = 10800;
 
+using google::scp::core::AsyncContext;
+using google::scp::core::Http1CurlClient;
+using google::scp::core::HttpRequest;
+using google::scp::core::HttpResponse;
 using google::scp::core::utils::Base64Decode;
 using ::google::scp::cpio::Cpio;
 using ::google::scp::cpio::CpioOptions;
 using ::google::scp::cpio::LogOption;
+using google::scp::cpio::client_providers::GlobalCpio;
 using ::testing::HasSubstr;
-// using PlatformJwtServiceEndpointMap =
-//     absl::flat_hash_map<CloudPlatform,
-//                         google::scp::cpio::AccessTokenServiceEndpoint>;
-/**
-std::unique_ptr<server_common::AccessTokenFetcherInterface>
-CreateKeyFetcherManager(
-    std::unique_ptr<server_common::PublicKeyFetcherInterface>
-        public_key_fetcher,
-    const unsigned int private_key_cache_ttl_seconds =
-        kDefaultPrivateKeyCacheTtlSeconds,
-    const unsigned int key_refresh_flow_run_frequency_seconds =
-        kDefaultKeyRefreshFlowRunFrequencySeconds) {
-  google::scp::cpio::PrivateKeyVendingEndpoint primary, secondary;
-  // AZURE_TODO: We might have to specify more fields for primary, secondary.
-  //             See services/common/encryption/key_fetcher_factory.cc for what
-  //             the original code does
 
-  primary.private_key_vending_service_endpoint =
-      absl::GetFlag(FLAGS_client_secret);
-  // AZURE_TODO: make it a command line option
-  absl::Duration private_key_ttl = absl::Seconds(private_key_cache_ttl_seconds);
-  std::unique_ptr<server_common::PrivateKeyFetcherInterface>
-      private_key_fetcher = server_common::PrivateKeyFetcherFactory::Create(
-          primary, {secondary}, private_key_ttl);
-
-  absl::Duration key_refresh_flow_run_freq =
-      absl::Seconds(key_refresh_flow_run_frequency_seconds);
-
-  auto event_engine = std::make_unique<server_common::EventEngineExecutor>(
-      grpc_event_engine::experimental::CreateEventEngine());
-  std::unique_ptr<server_common::KeyFetcherManagerInterface> manager =
-      server_common::KeyFetcherManagerFactory::Create(
-          key_refresh_flow_run_freq, std::move(public_key_fetcher),
-          std::move(private_key_fetcher), std::move(event_engine));
-  manager->Start();
-
-  return manager;
-}
-*/
-/**
-// Based on services/common/encryption/key_fetcher_factory.cc
-std::unique_ptr<server_common::PublicKeyFetcherInterface>
-CreatePublicKeyFetcher() {
-  std::vector<std::string> endpoint = {
-      absl::GetFlag(FLAGS_aad_endpoint)};
-//"client_id=$ClientApplicationId&client_secret=$ClientSecret&scope=$ApiIdentifierUri/.default&grant_type=client_credentials"
-  std::vector<std::string> clientId = {
-      absl::GetFlag(FLAGS_client_application_id)};
-
-  std::vector<std::string> clientSecret = {
-      absl::GetFlag(FLAGS_client_secret)};
-
-  std::vector<std::string> scope = {
-      absl::GetFlag(FLAGS_api_identifier_uri)};
-
-  server_common::CloudPlatform cloud_platform =
-      server_common::CloudPlatform::AZURE;
-
-  PlatformJwtServiceEndpointMap per_platform_endpoints = {
-      {cloud_platform, endpoint}};
-  return server_common::PublicKeyFetcherFactory::Create(per_platform_endpoints);
-}
-
-
-absl::StatusOr<quiche::ObliviousHttpRequest> EncryptAndDecrypt(
-    std::unique_ptr<server_common::KeyFetcherManagerInterface>
-        key_fetcher_manager,
-    const std::string plaintext_payload) {
-  // AZURE_TODO: There should be a function to select proper value. We can add
-  // an assertion to check the value is AZURE.
-  server_common::CloudPlatform cloud_platform =
-      server_common::CloudPlatform::AZURE;
-  auto public_key = key_fetcher_manager->GetPublicKey(cloud_platform);
-  EXPECT_TRUE(public_key.ok());
-
-  const absl::StatusOr<uint8_t> key_id =
-      ToIntKeyId(public_key.value().key_id());
-  EXPECT_TRUE(key_id.ok());
-
-  const auto config =
-      GetOhttpKeyConfig(key_id.value(), EVP_HPKE_DHKEM_X25519_HKDF_SHA256,
-                        EVP_HPKE_HKDF_SHA256, EVP_HPKE_AES_256_GCM);
-
-  std::string decoded_public_key;
-  Base64Decode(public_key.value().public_key(), decoded_public_key);
-
-  const auto request =
-      quiche::ObliviousHttpRequest::CreateClientObliviousRequest(
-          plaintext_payload, decoded_public_key, config);
-  const std::string payload_bytes = request->EncapsulateAndSerialize();
-
-  std::optional<server_common::PrivateKey> private_key =
-      key_fetcher_manager->GetPrivateKey(std::to_string(key_id.value()));
-  EXPECT_TRUE(private_key.has_value());
-
-  return server_common::DecryptEncapsulatedRequest(private_key.value(),
-                                                   payload_bytes);
-}
-
-class KmsInstance {
- public:
-  KmsInstance() {
-    std::string aad_endpoint = absl::GetFlag(FLAGS_aad_endpoint);
-    child_pid_ = fork();
-
-    CHECK(child_pid_ != -1) << "Fork failed.";
-
-    if (child_pid_ == 0) {
-      setpgid(0, 0);
-      int result = system(aad_endpoint.c_str());
-    }
-  }
-
-  ~KmsInstance() {
-    int result = kill(-child_pid_, SIGTERM);
-    CHECK(result == 0) << "Failed to kill KMS.";
-  }
-
-  void CreateKeyPair() {
-    std::string api_identifier_uri =
-        absl::GetFlag(FLAGS_api_identifier_uri);
-    int result = system(api_identifier_uri.c_str());
-    CHECK(result == 0) << "Failed to create a key pair.";
-  }
-
- private:
-  pid_t child_pid_;
-};
-*/
 class AccessTokenTest : public testing::Test {
  protected:
   void SetUp() override {
@@ -215,7 +97,87 @@ class AccessTokenTest : public testing::Test {
   google::scp::cpio::CpioOptions cpio_options_;
   // Initialize and shutdown gRPC client. DO NOT REMOVE.
   server_common::GrpcInit grpc_init_;
+  std::shared_ptr<Http1CurlClient> http_client_;
 };
+
+/// @brief Make a REST API request
+/// @param http_client client used to do the request
+/// @param method 
+/// @param url 
+/// @param headers 
+/// @return 
+std::tuple<google::scp::core::ExecutionResult, std::string, int> MakeRequest(
+    google::scp::core::HttpClientInterface& http_client,
+    const std::string& url,
+    google::scp::core::HttpMethod method = google::scp::core::HttpMethod::GET, 
+    const absl::btree_multimap<std::string, std::string>& headers = {}) {
+  auto request = std::make_shared<HttpRequest>();
+  request->method = method;
+  request->path = std::make_shared<std::string>(url);
+  if (!headers.empty()) {
+    request->headers =
+        std::make_shared<google::scp::core::HttpHeaders>(headers);
+  }
+  google::scp::core::ExecutionResult context_result;
+  absl::Notification finished;
+  std::string body = "";
+  int status_code = 404;
+  AsyncContext<HttpRequest, HttpResponse> context(
+      std::move(request),
+      [&](AsyncContext<HttpRequest, HttpResponse>& context) {
+        context_result = context.result;
+        if (context.response) {
+          status_code = static_cast<int>(context.response->code);
+          if (status_code < 300) {
+            const auto& bytes = *context.response->body.bytes;
+            body = std::string(bytes.begin(), bytes.end());
+          }
+        }
+        finished.Notify();
+      });
+
+  auto result = http_client.PerformRequest(context, kRequestTimeout);
+
+  finished.WaitForNotification();
+
+  // Return the response
+  return {context_result, body, status_code};
+}
+
+TEST_F(AccessTokenTest, SimpleRestCallSuccess) {
+  // This test case is to demonstrate how to call a rest api
+  // Declare a shared pointer to an HttpClientInterface
+  std::shared_ptr<google::scp::core::HttpClientInterface> http_client;
+
+  // Attempt to get the Http1Client from the GlobalCpio
+  auto client = GlobalCpio::GetGlobalCpio()->GetHttp1Client(http_client);
+
+  // Check if the operation was successful
+  if (!client.Successful()) {
+    // If not successful, print an error message and return from the function
+    std::cout << "[ FAILURE ] Unable to get Http Client." << std::endl
+              << std::endl;
+    return;
+  }
+
+  http_client->Init();
+  http_client->Run();
+  auto [response, body, status_code] =
+      MakeRequest(*http_client,
+                  "https://cat-fact.herokuapp.com/facts/random?amount=1");
+    if (status_code < 300) {
+      std::cout << "Response body: " << body << std::endl;
+      std::cout << "Status code: " << status_code << std::endl;
+    } else {
+      std::cout << "[ FAILURE ] Unexpected status code: " << status_code
+                << std::endl;
+    }
+
+    // Check the result
+    ASSERT_TRUE(response.Successful());
+    ASSERT_GT(body.length(), 0);
+    ASSERT_EQ(status_code, 200);
+}
 
 TEST_F(AccessTokenTest, RetrieveAccessTokenSuccess) {
   // This test case is to demonstrate how to retrieve an accesstoken
@@ -227,7 +189,40 @@ TEST_F(AccessTokenTest, RetrieveAccessTokenSuccess) {
   tokenOptions.apiUri = "your_api_uri";
 
   auto accesstoken_fetcher_manager =
-      privacy_sandbox::server_common::AccessTokenClientFactory::Create(tokenOptions);
+      privacy_sandbox::server_common::AccessTokenClientFactory::Create(
+          tokenOptions);
+
+  // Declare a shared pointer to an HttpClientInterface
+  std::shared_ptr<google::scp::core::HttpClientInterface> http_client;
+
+  // Attempt to get the Http1Client from the GlobalCpio
+  auto client = GlobalCpio::GetGlobalCpio()->GetHttp1Client(http_client);
+
+  // Check if the operation was successful
+  if (!client.Successful()) {
+    // If not successful, print an error message and return from the function
+    std::cout << "[ FAILURE ] Unable to get Http Client." << std::endl
+              << std::endl;
+    return;
+  }
+
+  http_client->Init();
+  http_client->Run();
+  auto [response, body, status_code] =
+      MakeRequest(*http_client,
+                  "https://cat-fact.herokuapp.com/facts/random?amount=1");
+    if (status_code < 300) {
+      std::cout << "Response body: " << body << std::endl;
+      std::cout << "Status code: " << status_code << std::endl;
+    } else {
+      std::cout << "[ FAILURE ] Unexpected status code: " << status_code
+                << std::endl;
+    }
+
+    // Check the result
+    ASSERT_TRUE(response.Successful());
+    ASSERT_GT(body.length(), 0);
+    ASSERT_EQ(status_code, 200);
 }
 
 }  // namespace
