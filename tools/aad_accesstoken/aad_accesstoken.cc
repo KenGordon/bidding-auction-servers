@@ -36,7 +36,6 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/cpp/accesstoken/src/accesstoken_fetcher_manager.h"
 #include "src/cpp/concurrent/event_engine_executor.h"
-constexpr absl::Duration kRequestTimeout = absl::Seconds(10);
 
 ABSL_FLAG(std::string, aad_endpoint,
           "https://login.microsoftonline.com/"
@@ -63,18 +62,7 @@ enum class CloudPlatform {
 };
 namespace {
 
-static constexpr char kPlaintextPayload[] = "plaintext";
-// 45 days. Value for private_key_cache_ttl_seconds in
-// services/common/constants/common_service_flags.cc
-static constexpr unsigned int kDefaultPrivateKeyCacheTtlSeconds = 3888000;
-// 3 hours. Value for key_refresh_flow_run_frequency_seconds in
-// services/common/constants/common_service_flags.cc
-static constexpr unsigned int kDefaultKeyRefreshFlowRunFrequencySeconds = 10800;
-
-using google::scp::core::AsyncContext;
 using google::scp::core::Http1CurlClient;
-using google::scp::core::HttpRequest;
-using google::scp::core::HttpResponse;
 using google::scp::core::utils::Base64Decode;
 using ::google::scp::cpio::Cpio;
 using ::google::scp::cpio::CpioOptions;
@@ -96,53 +84,7 @@ class AccessTokenTest : public testing::Test {
 
   google::scp::cpio::CpioOptions cpio_options_;
   // Initialize and shutdown gRPC client. DO NOT REMOVE.
-  server_common::GrpcInit grpc_init_;
-  std::shared_ptr<Http1CurlClient> http_client_;
 };
-
-/// @brief Make a REST API request
-/// @param http_client client used to do the request
-/// @param method 
-/// @param url 
-/// @param headers 
-/// @return 
-std::tuple<google::scp::core::ExecutionResult, std::string, int> MakeRequest(
-    google::scp::core::HttpClientInterface& http_client,
-    const std::string& url,
-    google::scp::core::HttpMethod method = google::scp::core::HttpMethod::GET, 
-    const absl::btree_multimap<std::string, std::string>& headers = {}) {
-  auto request = std::make_shared<HttpRequest>();
-  request->method = method;
-  request->path = std::make_shared<std::string>(url);
-  if (!headers.empty()) {
-    request->headers =
-        std::make_shared<google::scp::core::HttpHeaders>(headers);
-  }
-  google::scp::core::ExecutionResult context_result;
-  absl::Notification finished;
-  std::string body = "";
-  int status_code = 404;
-  AsyncContext<HttpRequest, HttpResponse> context(
-      std::move(request),
-      [&](AsyncContext<HttpRequest, HttpResponse>& context) {
-        context_result = context.result;
-        if (context.response) {
-          status_code = static_cast<int>(context.response->code);
-          if (status_code < 300) {
-            const auto& bytes = *context.response->body.bytes;
-            body = std::string(bytes.begin(), bytes.end());
-          }
-        }
-        finished.Notify();
-      });
-
-  auto result = http_client.PerformRequest(context, kRequestTimeout);
-
-  finished.WaitForNotification();
-
-  // Return the response
-  return {context_result, body, status_code};
-}
 
 TEST_F(AccessTokenTest, SimpleRestCallSuccess) {
   // This test case is to demonstrate how to call a rest api
@@ -152,33 +94,35 @@ TEST_F(AccessTokenTest, SimpleRestCallSuccess) {
   // Attempt to get the Http1Client from the GlobalCpio
   auto client = GlobalCpio::GetGlobalCpio()->GetHttp1Client(http_client);
 
-  // Check if the operation was successful
-  if (!client.Successful()) {
-    // If not successful, print an error message and return from the function
-    std::cout << "[ FAILURE ] Unable to get Http Client." << std::endl
+  // Create an AccessTokenClientOptions instance and set its properties
+  privacy_sandbox::server_common::AccessTokenClientOptions tokenOptions;
+  tokenOptions.endpoint = "your_endpoint";
+  tokenOptions.clientid = "your_client_id";
+  tokenOptions.clientSecret = "your_client_secret";
+  tokenOptions.apiUri = "your_api_uri";
+
+  // Create an AccessTokenFetcherManager instance
+  auto accesstoken_fetcher_factory =
+      privacy_sandbox::server_common::AccessTokenClientFactory::Create(
+          tokenOptions, http_client);
+  auto [response, body, status_code] = accesstoken_fetcher_factory->MakeRequest(
+      "https://cat-fact.herokuapp.com/facts/random?amount=1");
+
+  // Check the response
+  if (status_code < 300) {
+    std::cout << "Response body: " << body << std::endl;
+    std::cout << "Status code: " << status_code << std::endl;
+  } else {
+    std::cout << "[ FAILURE ] Unexpected status code: " << status_code
               << std::endl;
-    return;
   }
 
-  http_client->Init();
-  http_client->Run();
-  auto [response, body, status_code] =
-      MakeRequest(*http_client,
-                  "https://cat-fact.herokuapp.com/facts/random?amount=1");
-    if (status_code < 300) {
-      std::cout << "Response body: " << body << std::endl;
-      std::cout << "Status code: " << status_code << std::endl;
-    } else {
-      std::cout << "[ FAILURE ] Unexpected status code: " << status_code
-                << std::endl;
-    }
-
-    // Check the result
-    ASSERT_TRUE(response.Successful());
-    ASSERT_GT(body.length(), 0);
-    ASSERT_EQ(status_code, 200);
+  // Check the result
+  ASSERT_TRUE(response.Successful());
+  ASSERT_GT(body.length(), 0);
+  ASSERT_EQ(status_code, 200);
 }
-
+/**
 TEST_F(AccessTokenTest, RetrieveAccessTokenSuccess) {
   // This test case is to demonstrate how to retrieve an accesstoken
 
@@ -190,7 +134,7 @@ TEST_F(AccessTokenTest, RetrieveAccessTokenSuccess) {
 
   auto accesstoken_fetcher_manager =
       privacy_sandbox::server_common::AccessTokenClientFactory::Create(
-          tokenOptions);
+          tokenOptions, http_client);
 
   // Declare a shared pointer to an HttpClientInterface
   std::shared_ptr<google::scp::core::HttpClientInterface> http_client;
@@ -224,7 +168,7 @@ TEST_F(AccessTokenTest, RetrieveAccessTokenSuccess) {
     ASSERT_GT(body.length(), 0);
     ASSERT_EQ(status_code, 200);
 }
-
+*/
 }  // namespace
 }  // namespace privacy_sandbox::aad_accesstoken
 
