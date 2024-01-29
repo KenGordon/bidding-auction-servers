@@ -60,3 +60,6 @@ terraform.rc
 
 # Docker
 docker-buildx-*.log
+
+# environment
+aad.env

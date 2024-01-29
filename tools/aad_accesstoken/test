@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Environment variables:
-# - NO_CBUILD: When the value is `1`, it doesn't use cbuild tool and use bazel directly.
-
 set -ex
 DIR_OF_THIS_FILE=$(cd $(dirname $0); pwd)
 PROJECT_ROOT=$DIR_OF_THIS_FILE/../..
@@ -10,6 +7,6 @@ cd $PROJECT_ROOT
 
 PRIVACY_SANDBOX_DEV_DIR=$PROJECT_ROOT/..
 COMMAND="bazel"
-
+echo "$ClientSecret"
 $COMMAND build -c dbg //tools/aad_accesstoken:aad_accesstoken --sandbox_debug --config=azure_azure --//:build_flavor=non_prod
-./bazel-bin/tools/aad_accesstoken/aad_accesstoken --client_secret=""
+./bazel-bin/tools/aad_accesstoken/aad_accesstoken --client_secret="$ClientSecret" --aad_endpoint="$AadEndpoint" --api_identifier_uri="$ApiIdentifierUri" --api_application_id="$ApiApplicationId" --client_application_id="$ClientApplicationId"
