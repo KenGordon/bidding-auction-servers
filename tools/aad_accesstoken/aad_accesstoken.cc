@@ -15,27 +15,13 @@
 #include <cstdlib>
 #include <memory>
 #include <utility>
-
-#include <gmock/gmock-matchers.h>
-#include <include/gmock/gmock-actions.h>
-
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/strings/escaping.h"
-#include "absl/synchronization/blocking_counter.h"
-#include "absl/synchronization/notification.h"
-#include "core/curl_client/src/http1_curl_client.h"
-#include "core/utils/src/base64.h"
 #include "cpio/client_providers/global_cpio/src/global_cpio.h"
 #include "glog/logging.h"
 #include "gtest/gtest.h"
 #include "public/cpio/interface/cpio.h"
-#include "quiche/common/quiche_random.h"
-#include "quiche/oblivious_http/oblivious_http_client.h"
-#include "scp/cc/core/curl_client/src/http1_curl_wrapper.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/cpp/accesstoken/src/accesstoken_fetcher_manager.h"
-#include "src/cpp/concurrent/event_engine_executor.h"
 
 ABSL_FLAG(std::string, aad_endpoint,
           "https://login.microsoftonline.com/"
@@ -53,22 +39,12 @@ ABSL_FLAG(std::string, client_application_id,
 
 ABSL_FLAG(std::string, client_secret, "provide_client_secret", "Client secret");
 
-namespace privacy_sandbox::aad_accesstoken {
-enum class CloudPlatform {
-  LOCAL,
-  GCP,
-  AWS,
-  AZURE,
-};
 namespace {
 
-using google::scp::core::Http1CurlClient;
-using google::scp::core::utils::Base64Decode;
 using ::google::scp::cpio::Cpio;
 using ::google::scp::cpio::CpioOptions;
 using ::google::scp::cpio::LogOption;
 using google::scp::cpio::client_providers::GlobalCpio;
-using ::testing::HasSubstr;
 
 class AccessTokenTest : public testing::Test {
  protected:
@@ -217,7 +193,6 @@ TEST_F(AccessTokenTest, SimpleRestCallSuccess) {
   ASSERT_EQ(status_code, 200);
 }
 
-}  // namespace
 }  // namespace privacy_sandbox::aad_accesstoken
 
 int main(int argc, char** argv) {
