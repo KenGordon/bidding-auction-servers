@@ -119,7 +119,6 @@ TEST_F(AccessTokenTest, RetrieveAccessTokenSuccess) {
   absl::btree_multimap<std::string, std::string> headers;
   headers.insert(std::make_pair("Content-Type", "application/x-www-form-urlencoded"));
 
-  //std::string request_body = "client_id=4dcf9615-265c-40e9-93d4-728fbe1d1857&client_secret=85k8Q~k-rMytUNlQQQtF3zneNNY5B8hcl5b2Dckx&scope=api://d538182b-fc13-4cf2-a5a5-946db26caef3/.default&grant_type=client_credentials";
   std::ostringstream request_body_stream;
   request_body_stream << "client_id=" << absl::GetFlag(FLAGS_client_application_id)
                       << "&client_secret=" << absl::GetFlag(FLAGS_client_secret)

@@ -5,8 +5,18 @@ DIR_OF_THIS_FILE=$(cd $(dirname $0); pwd)
 PROJECT_ROOT=$DIR_OF_THIS_FILE/../..
 cd $PROJECT_ROOT
 
+check_idp_port_available() {
+    local PORT=3000
+    if ! lsof -i :$PORT > /dev/null; then
+        echo "IDP is not running"
+        echo 'In KMS directory start IDP by running make start-idp.'
+        return 1
+    fi
+}
+
+check_idp_port_available
 PRIVACY_SANDBOX_DEV_DIR=$PROJECT_ROOT/..
 COMMAND="bazel"
 echo "$ClientSecret"
 $COMMAND build -c dbg //tools/aad_accesstoken:aad_accesstoken --sandbox_debug --config=azure_azure --//:build_flavor=non_prod
-./bazel-bin/tools/aad_accesstoken/aad_accesstoken --client_secret="$ClientSecret" --aad_endpoint="$AadEndpoint" --api_identifier_uri="$ApiIdentifierUri" --api_application_id="$ApiApplicationId" --client_application_id="$ClientApplicationId"
+./bazel-bin/tools/aad_accesstoken/aad_accesstoken --client_secret="${ClientSecret:-}" --aad_endpoint="$AadEndpoint" --api_identifier_uri="${ApiIdentifierUri:-}" --api_application_id="${ApiApplicationId:-}" --client_application_id="{$ClientApplicationId:-}"
