@@ -94,6 +94,14 @@ config_setting(
 )
 
 config_setting(
+    name = "azure_instance",
+    flag_values = {
+        ":instance": "azure",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
     name = "aws_instance",
     flag_values = {
         ":instance": "aws",
