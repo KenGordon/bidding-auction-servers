@@ -62,7 +62,7 @@ else
     # Get key vault name
     # https://learn.microsoft.com/en-us/rest/api/keyvault/keyvault/vaults/list-by-resource-group?view=rest-keyvault-keyvault-2022-07-01&tabs=HTTP
     KEY_VAULT_NAME=$(wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
-    https://learn.microsoft.com/en-us/rest/api/keyvault/keyvault/vaults/list-by-resource-group?view=rest-keyvault-keyvault-2022-07-01&tabs=HTTP \
+    https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.KeyVault/vaults?api-version=2022-07-01 \
     | /server/bin/jq -r ".value.[0].name")
 
 
