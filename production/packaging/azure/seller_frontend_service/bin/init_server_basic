@@ -23,10 +23,32 @@ set -x
 #########################################################################
 
 # Start envoy.
-export original_dir=$(pwd)
-cd /etc/envoy
-openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 3650 -nodes -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=www.testenvoy.com"
-cd "$original_dir"
+
+if [ "$AKV_TLS_CERTS" != "true" ]; then
+    export cur_dir=$(pwd)
+    cd /etc/envoy
+    openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 3650 -nodes -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=www.testenvoy.com"
+    cd "$curl_dir"
+else
+    if [ -n "$MANAGED_IDENTITY_CLIENT_ID" ]; then
+        MANAGED_IDENTITY_CLIENT_ID_PARAM="&client_id=${MANAGED_IDENTITY_CLIENT_ID}"
+    fi
+    # Get credentials (to be used for fetching secrets)
+    export ACCESS_TOKEN=$(wget -q --header "Metadata:true"  --output-document -  \
+    "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fvault.azure.net${MANAGED_IDENTITY_CLIENT_ID_PARAM}" \
+    | /server/bin/jq -r '.access_token')
+
+    # Get our secrets, parse, decode, and write the secret strings to files that the Envoy config will read.
+    ## TLS Key
+    wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
+    https://${KEY_VAULT_NAME}.vault.azure.net/secrets/sfeEnvoyTlsCertKey?api-version=7.4 \
+    | /server/bin/jq -r ".value" > /etc/envoy/key.pem
+
+    ## TLS Cert
+    wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
+    https://${KEY_VAULT_NAME}.vault.azure.net/secrets/sfeEnvoyTlsCert?api-version=7.4 \
+    | /server/bin/jq -r ".value" > /etc/envoy/cert.pem
+fi
 
 /usr/local/bin/envoy --config-path /etc/envoy/envoy.yaml -l warn &
 sleep 2
