@@ -26,12 +26,7 @@ set -x
 
 # Parameters to be deleted
 # - MANAGED_IDENTITY_CLIENT_ID: This is to support development on azure instances with multiple user-assigned identities.
-# - AKV_RESOURCE_GROUP: Resource group that has AKV to store TLS certs.
 # - SELF_SIGNED_ENVOY_CERT
-
-# Parameters in production
-# - METADATA_OPERATOR
-# - METADATA_ENV
 
 if [ "$SELF_SIGNED_ENVOY_CERT" == "true" ]; then
     cur_dir=$(pwd)
@@ -46,25 +41,35 @@ else
     # Get subscription ID (to be used for getting the key vault name)
     SUBSCRIPTION_ID=$(wget -q --header "Metadata:true"  --output-document - \
     http://169.254.169.254/metadata/instance?api-version=2021-02-01 | \
-    jq -r .compute.subscriptionId)
+    /server/bin/jq -r .compute.subscriptionId)
 
-    # The following would be handy way to determin key vault name, but would be 54 characters which is more than the
-    # limit. A vault's name must be between 3-24 alphanumeric characters.
-    # KEY_VAULT_NAME=protectedaudience-${SUBSCRIPTION_ID}
+    # The key vault needs to be named as the following so that
+    # it can be specified with subscription ID.
+    # 'pa' stands for Protected Audience.
+    # We truncate SUBSCRIPTION_ID_NO_DASH from 36 to 22 so that the name fits in the max length (24 characters).
+    # Strictly speaking collisions could happen among subscriptions, but it should be fine because even in such cases
+    # it would be detected when creating the key vault.
+    SUBSCRIPTION_ID_NO_DASH=${SUBSCRIPTION_ID//-}
+    echo "TEST_TAKURO: SUBSCRIPTION_ID_NO_DASH: $SUBSCRIPTION_ID_NO_DASH"
+    KEY_VAULT_NAME=pa${SUBSCRIPTION_ID_NO_DASH:0:22}
 
-    # Get credentials (to be used for getting the key vault name)
+    echo "TEST_TAKURO: key vault name: $KEY_VAULT_NAME"
+
+    # Get credentials (to be used for getting operator and environment)
     ACCESS_TOKEN=$(wget -q --header "Metadata:true"  --output-document -  \
     "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fmanagement.azure.com${MANAGED_IDENTITY_CLIENT_ID_PARAM}" \
     | /server/bin/jq -r '.access_token')
 
-    RESOURCE_GROUP=${AKV_RESOURCE_GROUP:-protected-audience-akv}
+    RESOURCE_ID=$(wget -q --header "Metadata:true"  --output-document - \
+    http://169.254.169.254/metadata/instance?api-version=2021-02-01 | jq .compute.resourceId -r)
 
-    # Get key vault name
-    # https://learn.microsoft.com/en-us/rest/api/keyvault/keyvault/vaults/list-by-resource-group?view=rest-keyvault-keyvault-2022-07-01&tabs=HTTP
-    KEY_VAULT_NAME=$(wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
-    https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.KeyVault/vaults?api-version=2022-07-01 \
-    | /server/bin/jq -r ".value.[0].name")
+    OPERATOR=$(wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
+    https://management.azure.com${RESOURCE_ID}/providers/Microsoft.Resources/tags/default?api-version=2021-04-01 \
+    | /server/bin/jq -r '.properties.tags.operator')
 
+    ENV=$(wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
+    https://management.azure.com${RESOURCE_ID}/providers/Microsoft.Resources/tags/default?api-version=2021-04-01 \
+    | /server/bin/jq -r '.properties.tags.environment')
 
     # Get credentials (to be used for fetching secrets)
     ACCESS_TOKEN=$(wget -q --header "Metadata:true"  --output-document -  \
@@ -74,13 +79,13 @@ else
     # Get our secrets, parse, decode, and write the secret strings to files that the Envoy config will read.
     ## TLS Key
     wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
-    https://${KEY_VAULT_NAME}.vault.azure.net/secrets/${METADATA_OPERATOR}-${METADATA_ENV}-SFE_TLS_KEY?api-version=7.4 \
-    | /server/bin/jq -r ".value" 
+    https://${KEY_VAULT_NAME}.vault.azure.net/secrets/${OPERATOR}-${ENV}-SFE_TLS_KEY?api-version=7.4 \
+    | /server/bin/jq -r ".value"
     | base64 -d > /etc/envoy/key.pem
 
     ## TLS Cert
     wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
-    https://${KEY_VAULT_NAME}.vault.azure.net/secrets/${METADATA_OPERATOR}-${METADATA_ENV}-SFE_TLS_CERT?api-version=7.4 \
+    https://${KEY_VAULT_NAME}.vault.azure.net/secrets/${OPERATOR}-${ENV}-SFE_TLS_CERT?api-version=7.4 \
     | /server/bin/jq -r ".value"
     | base64 -d > /etc/envoy/cert.pem
 fi
