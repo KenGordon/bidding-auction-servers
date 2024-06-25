@@ -28,6 +28,7 @@ set -x
 # - AZURE_BA_METADATA_OPERATOR
 # - AZURE_BA_METADATA_ENVIRONMENT
 # - AZURE_BA_PARAM_KEY_VAULT_URL: URL like "https://${KEY_VAULT_NAME}.vault.azure.net"
+# - AZURE_BA_PARAM_GET_TOKEN_URL: URL like "http://$IDP_HOST/metadata/identity/oauth2/token?api-version=2018-02-01"
 
 # Parameters to be deleted
 # - MANAGED_IDENTITY_CLIENT_ID: This is to support development on azure instances with multiple user-assigned identities.
@@ -45,7 +46,7 @@ else
 
     # Get credentials (to be used for fetching secrets)
     ACCESS_TOKEN=$(wget -q --header "Metadata:true"  --output-document -  \
-    "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fvault.azure.net${MANAGED_IDENTITY_CLIENT_ID_PARAM}" \
+    "${AZURE_BA_PARAM_GET_TOKEN_URL}&resource=https%3A%2F%2Fvault.azure.net${MANAGED_IDENTITY_CLIENT_ID_PARAM}" \
     | /server/bin/jq -r '.access_token')
 
     # Get our secrets, parse, decode, and write the secret strings to files that the Envoy config will read.
