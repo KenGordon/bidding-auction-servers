@@ -32,13 +32,13 @@ ACCESS_TOKEN=$(wget -q --header "Metadata:true"  --output-document -  \
 # Get our secrets, parse, decode, and write the secret strings to files that the Envoy config will read.
 ## TLS Key
 wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
-${AZURE_BA_PARAM_KEY_VAULT_URL}/secrets/${AZURE_BA_METADATA_OPERATOR}-${AZURE_BA_METADATA_ENVIRONMENT}-SFE_TLS_KEY?api-version=7.4 \
+${AZURE_BA_PARAM_KEY_VAULT_URL}/secrets/${AZURE_BA_METADATA_OPERATOR}-${AZURE_BA_METADATA_ENVIRONMENT}-SfeTlsKey?api-version=7.4 \
 | /server/bin/jq -r ".value" \
 | base64 -d > /etc/envoy/key.pem
 
 ## TLS Cert
 wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
-${AZURE_BA_PARAM_KEY_VAULT_URL}/secrets/${AZURE_BA_METADATA_OPERATOR}-${AZURE_BA_METADATA_ENVIRONMENT}-SFE_TLS_CERT?api-version=7.4 \
+${AZURE_BA_PARAM_KEY_VAULT_URL}/secrets/${AZURE_BA_METADATA_OPERATOR}-${AZURE_BA_METADATA_ENVIRONMENT}-SfeTlsCert?api-version=7.4 \
 | /server/bin/jq -r ".value" \
 | base64 -d > /etc/envoy/cert.pem
 
