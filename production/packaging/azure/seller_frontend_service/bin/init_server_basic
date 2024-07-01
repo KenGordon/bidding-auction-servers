@@ -24,44 +24,23 @@ set -x
 
 # Start envoy.
 
-# Parameters
-# - AZURE_BA_METADATA_OPERATOR
-# - AZURE_BA_METADATA_ENVIRONMENT
-# - AZURE_BA_PARAM_KEY_VAULT_URL: URL like "https://${KEY_VAULT_NAME}.vault.azure.net"
-# - AZURE_BA_PARAM_GET_TOKEN_URL: URL like "http://$IDP_HOST/metadata/identity/oauth2/token?api-version=2018-02-01"
+# Get credentials (to be used for fetching secrets)
+ACCESS_TOKEN=$(wget -q --header "Metadata:true"  --output-document -  \
+"${AZURE_BA_PARAM_GET_TOKEN_URL_AKV}" \
+| /server/bin/jq -r '.access_token')
 
-# Parameters to be deleted
-# - MANAGED_IDENTITY_CLIENT_ID: This is to support development on azure instances with multiple user-assigned identities.
-# - SELF_SIGNED_ENVOY_CERT
+# Get our secrets, parse, decode, and write the secret strings to files that the Envoy config will read.
+## TLS Key
+wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
+${AZURE_BA_PARAM_KEY_VAULT_URL}/secrets/${AZURE_BA_METADATA_OPERATOR}-${AZURE_BA_METADATA_ENVIRONMENT}-SFE_TLS_KEY?api-version=7.4 \
+| /server/bin/jq -r ".value" \
+| base64 -d > /etc/envoy/key.pem
 
-if [ "$SELF_SIGNED_ENVOY_CERT" == "true" ]; then
-    cur_dir=$(pwd)
-    cd /etc/envoy
-    openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 3650 -nodes -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=www.testenvoy.com"
-    cd "$curl_dir"
-else
-    if [ -n "$MANAGED_IDENTITY_CLIENT_ID" ]; then
-        MANAGED_IDENTITY_CLIENT_ID_PARAM="&client_id=${MANAGED_IDENTITY_CLIENT_ID}"
-    fi
-
-    # Get credentials (to be used for fetching secrets)
-    ACCESS_TOKEN=$(wget -q --header "Metadata:true"  --output-document -  \
-    "${AZURE_BA_PARAM_GET_TOKEN_URL}&resource=https%3A%2F%2Fvault.azure.net${MANAGED_IDENTITY_CLIENT_ID_PARAM}" \
-    | /server/bin/jq -r '.access_token')
-
-    # Get our secrets, parse, decode, and write the secret strings to files that the Envoy config will read.
-    ## TLS Key
-    wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
-    ${AZURE_BA_PARAM_KEY_VAULT_URL}/secrets/${AZURE_BA_METADATA_OPERATOR}-${AZURE_BA_METADATA_ENVIRONMENT}-SFE_TLS_KEY?api-version=7.4 \
-    | /server/bin/jq -r ".value"
-    | base64 -d > /etc/envoy/key.pem
-
-    ## TLS Cert
-    wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
-    ${AZURE_BA_PARAM_KEY_VAULT_URL}/secrets/${AZURE_BA_METADATA_OPERATOR}-${AZURE_BA_METADATA_ENVIRONMENT}-SFE_TLS_CERT?api-version=7.4 \
-    | /server/bin/jq -r ".value"
-    | base64 -d > /etc/envoy/cert.pem
-fi
+## TLS Cert
+wget -q --header "Authorization: Bearer ${ACCESS_TOKEN}" --output-document - \
+${AZURE_BA_PARAM_KEY_VAULT_URL}/secrets/${AZURE_BA_METADATA_OPERATOR}-${AZURE_BA_METADATA_ENVIRONMENT}-SFE_TLS_CERT?api-version=7.4 \
+| /server/bin/jq -r ".value" \
+| base64 -d > /etc/envoy/cert.pem
 
 /usr/local/bin/envoy --config-path /etc/envoy/envoy.yaml -l warn &
 sleep 2
