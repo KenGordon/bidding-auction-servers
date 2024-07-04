@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG BASE_IMAGE=ubuntu:20.04
+ARG DOCKER_REGISTRY
+ARG BASE_IMAGE=${DOCKER_REGISTRY}ubuntu:20.04
 
 # ignore this hadolint error as BASE_IMAGE contains an image tag
 # hadolint ignore=DL3006
