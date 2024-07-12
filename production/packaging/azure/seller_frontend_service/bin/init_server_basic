@@ -26,7 +26,7 @@ set -x
 
 # Get credentials (to be used for fetching secrets)
 ACCESS_TOKEN=$(wget -q --header "Metadata:true"  --output-document -  \
-"${AZURE_BA_PARAM_GET_TOKEN_URL_AKV}" \
+"${AZURE_BA_PARAM_GET_TOKEN_URL}?api-version=2018-02-01&resource=https%3A%2F%2Fvault.azure.net%2F" \
 | /server/bin/jq -r '.access_token')
 
 # Get our secrets, parse, decode, and write the secret strings to files that the Envoy config will read.
