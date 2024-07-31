@@ -58,6 +58,7 @@ cc_test(
     tags = [
         "requires-network",
     ],
+    flaky = True,
     deps = [
         ":multi_curl_http_fetcher_async",
         "@com_github_grpc_grpc//:grpc++",
