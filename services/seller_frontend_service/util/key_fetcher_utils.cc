@@ -1,4 +1,5 @@
 // Copyright 2023 Google LLC
+// Copyright (C) Microsoft Corporation. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +23,6 @@
 
 #include "services/common/clients/config/trusted_server_config_client.h"
 #include "services/common/constants/common_service_flags.h"
-#include "services/common/public_key_url_allowlist.h"
 #include "services/common/util/json_util.h"
 #include "services/seller_frontend_service/runtime_flags.h"
 #include "src/encryption/key_fetcher/fake_key_fetcher_manager.h"
@@ -56,6 +56,8 @@ ParseCloudPlatformPublicKeysMap(
       cloud_platform = server_common::CloudPlatform::kGcp;
     } else if (absl::EqualsIgnoreCase(cloud_platform_str, "AWS")) {
       cloud_platform = server_common::CloudPlatform::kAws;
+    } else if (absl::EqualsIgnoreCase(cloud_platform_str, "AZURE")) {
+      cloud_platform = server_common::CloudPlatform::kAzure;
     } else {
       return absl::InvalidArgumentError(
           absl::StrCat(kUnsupportedCloudPlatformValue, cloud_platform_str));

@@ -1,4 +1,5 @@
 // Copyright 2023 Google LLC
+// Copyright (C) Microsoft Corporation. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,6 +30,7 @@ namespace {
 
 using ::testing::Return;
 
+// // MERGE_3.10.0_TODO: Putting it in this way to document as a commit 
 TEST(KeyFetcherUtilsTest, ParseCloudPlatformPublicKeysMap_ValidInput) {
   constexpr absl::string_view platform_format = R"json(
 {
