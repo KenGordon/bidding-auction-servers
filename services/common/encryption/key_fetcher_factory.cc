@@ -27,6 +27,8 @@
 
 #include "services/common/clients/config/trusted_server_config_client.h"
 #include "services/common/constants/common_service_flags.h"
+#include "services/common/public_key_url_allowlist.h"
+#include "services/common/util/request_response_constants.h"
 #include "src/concurrent/event_engine_executor.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/encryption/key_fetcher/fake_key_fetcher_manager.h"
