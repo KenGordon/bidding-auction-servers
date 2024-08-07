@@ -123,19 +123,16 @@ TEST(TrustedServerConfigClientTest, HasParameterWithValue) {
 
   std::vector<std::future<void>> f;
   TrustedServersConfigClient config_client(
-      kFlags,
-      [&](ParameterClientOptions parameter_client_options)
-          -> std::unique_ptr<ParameterClientInterface> {
+      kFlags, [&f](const ParameterClientOptions& parameter_client_options) {
         std::unique_ptr<MockParameterClient> mock_config_client =
             std::make_unique<MockParameterClient>();
         EXPECT_CALL(*mock_config_client, Init)
-            .WillOnce(Return(SuccessExecutionResult()));
+            .WillOnce(Return(absl::OkStatus()));
         EXPECT_CALL(*mock_config_client, Run)
-            .WillOnce(Return(SuccessExecutionResult()));
+            .WillOnce(Return(absl::OkStatus()));
         EXPECT_CALL(*mock_config_client, GetParameter)
-            .WillRepeatedly([&](GetParameterRequest get_param_req,
-                                Callback<GetParameterResponse> callback)
-                                -> ExecutionResult {
+            .WillRepeatedly([&f](GetParameterRequest get_param_req,
+                                 Callback<GetParameterResponse> callback) {
               // async reading parameter like the real case.
               f.push_back(std::async(std::launch::async, [cb = std::move(
                                                               callback)]() {
@@ -145,9 +142,9 @@ TEST(TrustedServerConfigClientTest, HasParameterWithValue) {
                        google::scp::core::errors::SC_CPIO_RESOURCE_NOT_FOUND),
                    response);
               }));
-              return SuccessExecutionResult();
+              return absl::OkStatus();
             });
-        return std::move(mock_config_client);
+        return mock_config_client;
       });
   config_client.SetFlag(FLAGS_config_param_1, "");
 
