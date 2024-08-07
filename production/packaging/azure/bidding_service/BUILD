@@ -22,22 +22,45 @@ load(
     "@rules_pkg//pkg:mappings.bzl",
     "pkg_attributes",
     "pkg_files",
+    "pkg_mklink",
 )
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_pkg//pkg:zip.bzl", "pkg_zip")
-load("//:config.bzl", "LOG_ENV_VARS")
 
 pkg_files(
     name = "server_executables",
     srcs = [
-        "bin/init_server_basic",
         "//services/bidding_service:server",
-    ],
+    ] + select({
+        "//:include_all_inference_binaries": [
+            "@pytorch_v2_1_1//:artifacts/inference_sidecar_pytorch_v2_1_1",
+            "@tensorflow_v2_14_0//:artifacts/inference_sidecar_tensorflow_v2_14_0",
+        ],
+        "//:inference_noop": [
+            "@inference_common//:inference_sidecar_test_target",
+        ],
+        "//:inference_pytorch": [
+            "@pytorch_v2_1_1//:artifacts/inference_sidecar_pytorch_v2_1_1",
+        ],
+        "//:inference_tensorflow": [
+            "@tensorflow_v2_14_0//:artifacts/inference_sidecar_tensorflow_v2_14_0",
+        ],
+        "//conditions:default": [],
+    }),
     attributes = pkg_attributes(mode = "0555"),
-    prefix = "/server/bin",
+    prefix = "/",
+)
+
+# Create a symlink between where kmstool_enclave_cli expects shell to be
+# (/bin/sh) and where it actually is on our image (/busybox/sh).
+pkg_mklink(
+    name = "busybox_sh_symlink",
+    link_name = "/bin/sh",
+    target = "/busybox/sh",
 )
 
 server_binaries = [
+    ":busybox_sh_symlink",
     ":server_executables",
 ]
 
@@ -54,11 +77,40 @@ pkg_tar(
 container_layer(
     name = "server_binary_layer",
     directory = "/",
+    env = {
+        "GLOG_logtostderr": "1",
+        "GLOG_stderrthreshold": "0",
+        "GRPC_DNS_RESOLVER": "native",
+    },
     tars = [
         ":server_binaries_tar",
     ],
 )
 
+cddl_specs = [
+    "//services/bidding_service:packaged_cddl_specs",
+]
+
+pkg_zip(
+    name = "cddl_specs",
+    srcs = cddl_specs,
+)
+
+pkg_tar(
+    name = "cddl_specs_tar",
+    srcs = cddl_specs,
+)
+
+container_layer(
+    name = "cddl_specs_layer",
+    directory = "/",
+    tars = [
+        ":cddl_specs_tar",
+    ],
+)
+
+# This image target is meant for testing running the server in an enclave using
+# aws proxy to abstract vsock communication.
 container_image(
     name = "server_docker_image",
     base = select({
@@ -66,15 +118,26 @@ container_image(
         "@platforms//cpu:x86_64": "@runtime-cc-debian-amd64//image",
     }),
     cmd = [
-        "/server/bin/init_server_basic",
+        "/proxify",
+        "--",
+        "/server",
+        "--init_config_client=true",
     ],
-    entrypoint = ["sh"],
-    env = LOG_ENV_VARS,
-    labels = {"tee.launch_policy.log_redirect": "always"},
+    entrypoint = [
+        "/busybox/sh",
+    ],
     layers = [
+        ":cddl_specs_layer",
         ":server_binary_layer",
+    ] + select({
+        "//:e2e_build": [
+        ],
+        "//conditions:default": [],
+    }),
+    tars = [
+        "@google_privacysandbox_servers_common//src/aws/proxy:libnsm_and_proxify_tar",
+        "@google_privacysandbox_servers_common//src/cpio/client_providers/kms_client_provider/aws:kms_binaries",
     ],
-    ports = ["50051"],
 )
 
 container_test(

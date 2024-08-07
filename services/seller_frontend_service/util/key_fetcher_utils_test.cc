@@ -30,12 +30,12 @@ namespace {
 
 using ::testing::Return;
 
-// // MERGE_3.10.0_TODO: Putting it in this way to document as a commit 
 TEST(KeyFetcherUtilsTest, ParseCloudPlatformPublicKeysMap_ValidInput) {
   constexpr absl::string_view platform_format = R"json(
 {
   "GCP": "%s",
-  "AWS": "%s"
+  "AWS": "%s",
+  "Azure": "%s",
 }
 )json";
 
@@ -44,12 +44,14 @@ TEST(KeyFetcherUtilsTest, ParseCloudPlatformPublicKeysMap_ValidInput) {
 
   auto map = ParseCloudPlatformPublicKeysMap(per_platform_public_key_endpoints);
   ASSERT_TRUE(map.ok());
-  EXPECT_EQ(map->size(), 2);
+  EXPECT_EQ(map->size(), 3);
 
   EXPECT_EQ((*map)[server_common::CloudPlatform::kGcp][0],
             kGCPProdPublicKeyEndpoint);
   EXPECT_EQ((*map)[server_common::CloudPlatform::kAws][0],
             kAWSProdPublicKeyEndpoint);
+  EXPECT_EQ((*map)[server_common::CloudPlatform::kAzure][0],
+            kAzureProdPublicKeyEndpoint);
 }
 
 TEST(KeyFetcherUtilsTest, ParseCloudPlatformPublicKeysMap_InvalidJson) {

@@ -105,7 +105,6 @@ std::unique_ptr<KeyFetcherManagerInterface> CreateKeyFetcherManager(
       config_client.GetStringParameter(PRIMARY_COORDINATOR_REGION);
 
   if (config_client.HasParameter(GCP_PRIMARY_WORKLOAD_IDENTITY_POOL_PROVIDER)) {
-    PS_VLOG(3) << "Found GCP Workload Identity Pool Provider, proceeding...";
     primary.gcp_private_key_vending_service_cloudfunction_url =
         config_client.GetStringParameter(
             GCP_PRIMARY_KEY_SERVICE_CLOUD_FUNCTION_URL);
@@ -129,10 +128,10 @@ std::unique_ptr<KeyFetcherManagerInterface> CreateKeyFetcherManager(
     if (config_client.HasParameter(
             GCP_PRIMARY_WORKLOAD_IDENTITY_POOL_PROVIDER)) {
       secondary.gcp_private_key_vending_service_cloudfunction_url =
-        config_client.GetStringParameter(
-            GCP_SECONDARY_KEY_SERVICE_CLOUD_FUNCTION_URL);
-    secondary.gcp_wip_provider = config_client.GetStringParameter(
-        GCP_SECONDARY_WORKLOAD_IDENTITY_POOL_PROVIDER);
+          config_client.GetStringParameter(
+              GCP_SECONDARY_KEY_SERVICE_CLOUD_FUNCTION_URL);
+      secondary.gcp_wip_provider = config_client.GetStringParameter(
+          GCP_SECONDARY_WORKLOAD_IDENTITY_POOL_PROVIDER);
     }
 
     secondaries.push_back(secondary);
