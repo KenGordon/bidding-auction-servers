@@ -35,12 +35,13 @@ TEST(KeyFetcherUtilsTest, ParseCloudPlatformPublicKeysMap_ValidInput) {
 {
   "GCP": "%s",
   "AWS": "%s",
-  "Azure": "%s",
+  "Azure": "%s"
 }
 )json";
 
-  std::string per_platform_public_key_endpoints = absl::StrFormat(
-      platform_format, kGCPProdPublicKeyEndpoint, kAWSProdPublicKeyEndpoint);
+  std::string per_platform_public_key_endpoints =
+      absl::StrFormat(platform_format, kGCPProdPublicKeyEndpoint,
+                      kAWSProdPublicKeyEndpoint, kAzureProdPublicKeyEndpoint);
 
   auto map = ParseCloudPlatformPublicKeysMap(per_platform_public_key_endpoints);
   ASSERT_TRUE(map.ok());
