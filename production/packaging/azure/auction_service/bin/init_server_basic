@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -o errexit
 set -x
 export GLOG_logtostderr=1
 export GLOG_stderrthreshold=0
@@ -20,4 +21,3 @@ export GRPC_DNS_RESOLVER=native
 
 # Start the server first.
 /server/bin/server --init_config_client=true
-tail -f /dev/null
