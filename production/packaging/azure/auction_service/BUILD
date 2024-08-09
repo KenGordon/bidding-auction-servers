@@ -29,7 +29,9 @@ load("@rules_pkg//pkg:zip.bzl", "pkg_zip")
 pkg_files(
     name = "server_executables",
     srcs = [
+        "bin/init_server_basic",
         "//services/auction_service:server",
+        "@com_github_grpc_grpc//test/cpp/util:grpc_cli",
     ],
     attributes = pkg_attributes(mode = "0555"),
     prefix = "/server/bin",
@@ -52,11 +54,6 @@ pkg_tar(
 container_layer(
     name = "server_binary_layer",
     directory = "/",
-    env = {
-        "GLOG_logtostderr": "1",
-        "GLOG_stderrthreshold": "0",
-        "GRPC_DNS_RESOLVER": "native",
-    },
     tars = [
         ":server_binaries_tar",
     ],
@@ -69,11 +66,9 @@ container_image(
         "@platforms//cpu:x86_64": "@runtime-cc-debian-amd64//image",
     }),
     cmd = [
-        "--init_config_client=true",
+        "/server/bin/init_server_basic",
     ],
-    entrypoint = [
-        "/server/bin/server",
-    ],
+    entrypoint = ["sh"],
     labels = {"tee.launch_policy.log_redirect": "always"},
     layers = [
         ":server_binary_layer",
