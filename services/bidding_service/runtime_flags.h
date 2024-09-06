@@ -56,11 +56,7 @@ inline constexpr absl::string_view
     BIDDING_TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES =
         "BIDDING_TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES";
 
-<<<<<<< HEAD
-inline constexpr int kNumRuntimeFlags = 15;
-=======
 inline constexpr int kNumRuntimeFlags = 16;
->>>>>>> upstream-v3.11.0
 inline constexpr std::array<absl::string_view, kNumRuntimeFlags> kFlags = {
     PORT,
     HEALTHCHECK_PORT,

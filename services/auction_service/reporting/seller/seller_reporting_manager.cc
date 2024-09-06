@@ -26,11 +26,8 @@
 
 namespace privacy_sandbox::bidding_auction_servers {
 namespace {
-<<<<<<< HEAD
-=======
 constexpr absl::string_view kReportResultUDFName = "reportResult";
 
->>>>>>> upstream-v3.11.0
 inline std::vector<std::shared_ptr<std::string>> GetReportResultInput(
     const std::string& seller_device_signals,
     const ReportingDispatchRequestConfig& dispatch_request_config,
@@ -78,33 +75,6 @@ inline DispatchRequest GetReportResultDispatchRequest(
                                         dispatch_request_config, request_data)};
 }
 
-<<<<<<< HEAD
-// Collects log of the provided type into the output vector.
-inline void HandleUdfLogs(const rapidjson::Document& document,
-                          const std::string& log_type,
-                          RequestLogContext& log_context) {
-  auto LogUdf = [&log_context](absl::string_view adtech_log,
-                               absl::string_view prefix) {
-    if (!server_common::log::PS_VLOG_IS_ON(kUdfLog) &&
-        !log_context.is_debug_response()) {
-      return;
-    }
-    std::string log_str = absl::StrCat(prefix, adtech_log);
-    PS_VLOG(kUdfLog, log_context) << log_str;
-    log_context.SetEventMessageField(log_str);
-  };
-  auto log_it = document.FindMember(log_type.c_str());
-  if (log_it == document.MemberEnd()) {
-    return;
-  }
-  for (const auto& log : log_it->value.GetArray()) {
-    LogUdf(log.GetString(),
-           absl::StrCat(log_type,
-                        " from Seller's reportResult script execution:"));
-  }
-}
-=======
->>>>>>> upstream-v3.11.0
 }  // namespace
 
 // Todo(b/357293697): Refactor SellerReportingDispatchRequestData
@@ -203,16 +173,6 @@ absl::StatusOr<ReportResultResponse> ParseReportResultResponse(
   const auto& response_obj = it->value.GetObject();
 
   ReportResultResponse report_result_response;
-<<<<<<< HEAD
-  rapidjson::Value signals_for_winner;
-  PS_ASSIGN_IF_PRESENT(report_result_response.signals_for_winner, response_obj,
-                       kSignalsForWinner, GetString);
-  PS_ASSIGN_IF_PRESENT(report_result_response.report_result_url, response_obj,
-                       kReportResultUrl, GetString);
-  rapidjson::Value interaction_reporting_urls_map;
-  PS_ASSIGN_IF_PRESENT(interaction_reporting_urls_map, response_obj,
-                       kInteractionReportingUrlsWrapperResponse, GetObject);
-=======
   PS_ASSIGN_IF_PRESENT(report_result_response.signals_for_winner, response_obj,
                        kSignalsForWinner, String);
   if (report_result_response.signals_for_winner.empty() ||
@@ -224,7 +184,6 @@ absl::StatusOr<ReportResultResponse> ParseReportResultResponse(
   rapidjson::Value interaction_reporting_urls_map;
   PS_ASSIGN_IF_PRESENT(interaction_reporting_urls_map, response_obj,
                        kInteractionReportingUrlsWrapperResponse, Object);
->>>>>>> upstream-v3.11.0
   for (rapidjson::Value::MemberIterator it =
            interaction_reporting_urls_map.MemberBegin();
        it != interaction_reporting_urls_map.MemberEnd(); ++it) {
@@ -239,18 +198,12 @@ absl::StatusOr<ReportResultResponse> ParseReportResultResponse(
     }
   }
   if (dispatch_request_config.enable_adtech_code_logging) {
-<<<<<<< HEAD
-    HandleUdfLogs(document, kReportingUdfLogs, log_context);
-    HandleUdfLogs(document, kReportingUdfErrors, log_context);
-    HandleUdfLogs(document, kReportingUdfWarnings, log_context);
-=======
     HandleUdfLogs(document, kReportingUdfLogs, kReportResultUDFName,
                   log_context);
     HandleUdfLogs(document, kReportingUdfErrors, kReportResultUDFName,
                   log_context);
     HandleUdfLogs(document, kReportingUdfWarnings, kReportResultUDFName,
                   log_context);
->>>>>>> upstream-v3.11.0
   }
   return report_result_response;
 }

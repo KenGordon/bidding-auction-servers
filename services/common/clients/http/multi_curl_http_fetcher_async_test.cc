@@ -243,10 +243,6 @@ TEST_F(MultiCurlHttpFetcherAsyncTest,
   absl::Notification done;
   HTTPRequest request;
   request.url = "httpbin.org/gzip";
-<<<<<<< HEAD
-  // request.headers = {{"Accept-Encoding", "gzip"}, {"abc", "def"}};
-=======
->>>>>>> upstream-v3.11.0
   request.include_headers = {"Content-Encoding"};
   auto done_cb =
       [&done](const std::vector<absl::StatusOr<HTTPResponse>>& results) {

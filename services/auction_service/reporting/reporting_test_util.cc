@@ -16,16 +16,6 @@
 
 #include "services/auction_service/reporting/reporting_test_util.h"
 
-<<<<<<< HEAD
-#include <string>
-#include <vector>
-
-#include "rapidjson/document.h"
-#include "services/auction_service/reporting/reporting_helper.h"
-
-namespace privacy_sandbox::bidding_auction_servers {
-namespace {
-=======
 #include <memory>
 #include <string>
 #include <vector>
@@ -56,7 +46,6 @@ constexpr int kRecencyUpperBound = 32;
 constexpr int kModelingSignalsLowerBound = 0;
 constexpr int kModelingSignalsUpperBound = 65536;
 
->>>>>>> upstream-v3.11.0
 inline void SetAdTechLogs(const std::vector<std::string>& logs,
                           const rapidjson::GenericStringRef<char>& tag,
                           rapidjson::Document& doc) {
@@ -74,8 +63,6 @@ void SetAdTechLogs(const ReportingResponseLogs& console_logs,
   SetAdTechLogs(console_logs.warnings, kReportingUdfWarnings, doc);
   SetAdTechLogs(console_logs.errors, kReportingUdfErrors, doc);
 }
-<<<<<<< HEAD
-=======
 TestSellerDeviceSignals ParseSellerDeviceSignals(
     rapidjson::Document& document) {
   TestSellerDeviceSignals seller_device_signals;
@@ -324,6 +311,5 @@ BuyerReportingDispatchRequestData GetTestBuyerDispatchRequestData(
           .signals_for_winner = kTestSignalsForWinner,
           .winning_ad_render_url = kTestRender};
 }
->>>>>>> upstream-v3.11.0
 
 }  // namespace privacy_sandbox::bidding_auction_servers

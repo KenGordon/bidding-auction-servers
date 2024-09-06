@@ -55,18 +55,6 @@ class RomaRequestContext {
     return is_protected_audience_request_;
   }
   // Set the unique bidding metric context
-<<<<<<< HEAD
-  void SetMetricContext(std::unique_ptr<metric::BiddingContext> context) {
-    bidding_metric_context_ = std::move(context);
-  }
-
-  // Get the shared bidding metric context
-  absl::StatusOr<metric::BiddingContext*> GetMetricContext() const {
-    if (!bidding_metric_context_) {
-      return absl::NotFoundError("Metric context not initialized.");
-    }
-    return bidding_metric_context_.get();
-=======
   void SetMetricContext(std::unique_ptr<MetricContextT> context) {
     metric_context_ = std::move(context);
   }
@@ -77,7 +65,6 @@ class RomaRequestContext {
       return absl::NotFoundError("Metric context not initialized.");
     }
     return metric_context_.get();
->>>>>>> upstream-v3.11.0
   }
 
   bool IsConsented() { return request_logging_context_.is_consented(); }
@@ -85,12 +72,7 @@ class RomaRequestContext {
  private:
   RequestLogContext request_logging_context_;
   bool is_protected_audience_request_ = false;
-<<<<<<< HEAD
-  // Metric context for bidding
-  std::unique_ptr<metric::BiddingContext> bidding_metric_context_;
-=======
   std::unique_ptr<MetricContextT> metric_context_;
->>>>>>> upstream-v3.11.0
 };
 
 template <typename MetricContextT>

@@ -34,7 +34,6 @@ TEST(KeyFetcherUtilsTest, ParseCloudPlatformPublicKeysMap_ValidInput) {
   constexpr absl::string_view platform_format = R"json(
 {
   "GCP": "%s",
-<<<<<<< HEAD
   "AWS": "%s",
   "Azure": "%s"
 }
@@ -43,14 +42,6 @@ TEST(KeyFetcherUtilsTest, ParseCloudPlatformPublicKeysMap_ValidInput) {
   std::string per_platform_public_key_endpoints =
       absl::StrFormat(platform_format, kGCPProdPublicKeyEndpoint,
                       kAWSProdPublicKeyEndpoint, kAzureProdPublicKeyEndpoint);
-=======
-  "AWS": "%s"
-}
-)json";
-
-  std::string per_platform_public_key_endpoints = absl::StrFormat(
-      platform_format, kGCPProdPublicKeyEndpoint, kAWSProdPublicKeyEndpoint);
->>>>>>> upstream-v3.11.0
 
   auto map = ParseCloudPlatformPublicKeysMap(per_platform_public_key_endpoints);
   ASSERT_TRUE(map.ok());
@@ -60,11 +51,8 @@ TEST(KeyFetcherUtilsTest, ParseCloudPlatformPublicKeysMap_ValidInput) {
             kGCPProdPublicKeyEndpoint);
   EXPECT_EQ((*map)[server_common::CloudPlatform::kAws][0],
             kAWSProdPublicKeyEndpoint);
-<<<<<<< HEAD
   EXPECT_EQ((*map)[server_common::CloudPlatform::kAzure][0],
             kAzureProdPublicKeyEndpoint);
-=======
->>>>>>> upstream-v3.11.0
 }
 
 TEST(KeyFetcherUtilsTest, ParseCloudPlatformPublicKeysMap_InvalidJson) {

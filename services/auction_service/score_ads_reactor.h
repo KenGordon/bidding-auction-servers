@@ -171,13 +171,6 @@ class ScoreAdsReactor
   // PerformReportingWithSellerAndBuyerCodeIsolation instead")]]
   void PerformReporting(const ScoreAdsResponse::AdScore& winning_ad_score,
                         absl::string_view id);
-<<<<<<< HEAD
-  // Dispatches request to reportResult() udf with seller and buyer udf
-  // isolation.
-  void DispatchReportResultRequest(
-      const ScoreAdsResponse::AdScore& winning_ad_score,
-      const std::shared_ptr<std::string>& auction_config);
-=======
   // Performs reportResult and reportWin udf execution with seller and buyer
   // code isolation
   void PerformReportingWithSellerAndBuyerCodeIsolation(
@@ -209,7 +202,6 @@ class ScoreAdsReactor
       const ScoreAdsResponse::AdScore& winning_ad_score,
       absl::string_view dispatch_id);
 
->>>>>>> upstream-v3.11.0
   // Publishes metrics and Finishes the RPC call with a status.
   void FinishWithStatus(const grpc::Status& status);
 
@@ -220,16 +212,10 @@ class ScoreAdsReactor
       const std::vector<absl::StatusOr<DispatchResponse>>& responses);
 
   // Function called after reportResult udf execution.
-<<<<<<< HEAD
-  void ReportResultCallback(
-      const std::vector<absl::StatusOr<DispatchResponse>>& responses);
-
-=======
   void CancellableReportResultCallback(
       const std::vector<absl::StatusOr<DispatchResponse>>& responses);
   void ReportWinCallback(
       const std::vector<absl::StatusOr<DispatchResponse>>& responses);
->>>>>>> upstream-v3.11.0
   // Creates and populates dispatch requests using AdWithBidMetadata objects
   // in the input proto for single seller and component auctions.
   void PopulateProtectedAudienceDispatchRequests(

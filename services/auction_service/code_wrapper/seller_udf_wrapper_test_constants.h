@@ -44,8 +44,6 @@ constexpr absl::string_view kSellerBaseCode = R"JS_CODE(
         }
         registerAdBeacon({"clickEvent":"http://click.com"})
         return {"testSignal":"testValue"}
-<<<<<<< HEAD
-=======
     }
 )JS_CODE";
 
@@ -141,7 +139,6 @@ constexpr absl::string_view kSellerBaseCodeWithNoSignalsForWinner = R"JS_CODE(
           sendReportTo("http://test.com&topLevelSeller="+sellerReportingSignals.topLevelSeller+"&componentSeller="+sellerReportingSignals.componentSeller)
         }
         registerAdBeacon({"clickEvent":"http://click.com"})
->>>>>>> upstream-v3.11.0
     }
 )JS_CODE";
 

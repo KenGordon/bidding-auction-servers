@@ -487,10 +487,7 @@ cc_library(
     name = "cancellation_wrapper",
     hdrs = ["cancellation_wrapper.h"],
     deps = [
-<<<<<<< HEAD
-=======
         ":error_categories",
->>>>>>> upstream-v3.11.0
         "//services/common:feature_flags",
         "@com_github_grpc_grpc//:grpc++",
     ],
@@ -514,8 +511,6 @@ cc_test(
         "@com_google_googletest//:gtest_main",
     ],
 )
-<<<<<<< HEAD
-=======
 
 cc_library(
     name = "client_contexts",
@@ -534,4 +529,3 @@ cc_library(
         "@com_google_absl//absl/time",
     ],
 )
->>>>>>> upstream-v3.11.0

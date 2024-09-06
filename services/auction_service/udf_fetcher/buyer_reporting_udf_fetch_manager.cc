@@ -120,8 +120,6 @@ void BuyerReportingUdfFetchManager::LoadBuyerCode(
 
 void BuyerReportingUdfFetchManager::OnProtectedAudienceUdfFetch(
     const std::string& buyer_origin, HTTPResponse& udf_response) {
-<<<<<<< HEAD
-=======
   if (auto validation_status = ValidateUdfFetchResponse(udf_response);
       !validation_status.ok()) {
     PS_LOG(ERROR)
@@ -129,7 +127,6 @@ void BuyerReportingUdfFetchManager::OnProtectedAudienceUdfFetch(
         << buyer_origin << "; Error:" << validation_status;
     return;
   }
->>>>>>> upstream-v3.11.0
   std::string& udf = udf_response.body;
   absl::MutexLock lock(&code_blob_per_origin_mu_);
   if (protected_auction_code_blob_per_origin_[buyer_origin] != udf) {
@@ -139,14 +136,9 @@ void BuyerReportingUdfFetchManager::OnProtectedAudienceUdfFetch(
         GetBuyerReportWinVersion(udf_response.final_url,
                                  AuctionType::kProtectedAudience);
     if (!code_version.ok()) {
-<<<<<<< HEAD
-      PS_LOG(ERROR) << "Error getting code version for buyer:" << buyer_origin
-                    << "; Error:" << code_version.status().message();
-=======
       PS_LOG(ERROR, SystemLogContext())
           << "Error getting code version for buyer:" << buyer_origin
           << "; Error:" << code_version.status().message();
->>>>>>> upstream-v3.11.0
       return;
     }
     LoadBuyerCode(*code_version, udf);
@@ -156,8 +148,6 @@ void BuyerReportingUdfFetchManager::OnProtectedAudienceUdfFetch(
 
 void BuyerReportingUdfFetchManager::OnProtectedAppSignalUdfFetch(
     const std::string& buyer_origin, HTTPResponse& udf_response) {
-<<<<<<< HEAD
-=======
   if (auto validation_status = ValidateUdfFetchResponse(udf_response);
       !validation_status.ok()) {
     PS_LOG(ERROR) << "Protected App Signals UDF response failed "
@@ -165,7 +155,6 @@ void BuyerReportingUdfFetchManager::OnProtectedAppSignalUdfFetch(
                   << buyer_origin << "; Error:" << validation_status;
     return;
   }
->>>>>>> upstream-v3.11.0
   std::string& udf = udf_response.body;
   absl::MutexLock lock(&code_blob_per_origin_mu_);
   if (protected_app_signals_code_blob_per_origin_[buyer_origin] != udf) {
@@ -174,14 +163,9 @@ void BuyerReportingUdfFetchManager::OnProtectedAppSignalUdfFetch(
         // UDF URL.
         udf_response.final_url, AuctionType::kProtectedAppSignals);
     if (!code_version.ok()) {
-<<<<<<< HEAD
-      PS_LOG(ERROR) << "Error getting code version for buyer:" << buyer_origin
-                    << "; Error:" << code_version.status().message();
-=======
       PS_LOG(ERROR, SystemLogContext())
           << "Error getting code version for buyer:" << buyer_origin
           << "; Error:" << code_version.status().message();
->>>>>>> upstream-v3.11.0
     }
     LoadBuyerCode(code_version.value(), udf);
     protected_app_signals_code_blob_per_origin_[buyer_origin] = std::move(udf);
@@ -199,14 +183,9 @@ BuyerReportingUdfFetchManager::PeriodicBuyerReportingFetchAndLoadSync() {
        config_.buyer_report_win_js_urls()) {
     auto request = CreateUdfFetchRequest(report_win_endpoint);
     if (!request.ok()) {
-<<<<<<< HEAD
-      PS_LOG(ERROR) << "Failed to create request for buyer:" << buyer_origin
-                    << "; Error:" << request.status();
-=======
       PS_LOG(ERROR, SystemLogContext())
           << "Failed to create request for buyer:" << buyer_origin
           << "; Error:" << request.status();
->>>>>>> upstream-v3.11.0
       continue;
     }
     requests.emplace_back(*std::move(request));
@@ -217,14 +196,9 @@ BuyerReportingUdfFetchManager::PeriodicBuyerReportingFetchAndLoadSync() {
        config_.protected_app_signals_buyer_report_win_js_urls()) {
     auto request = CreateUdfFetchRequest(report_win_endpoint);
     if (!request.ok()) {
-<<<<<<< HEAD
-      PS_LOG(ERROR) << "Failed to create request for buyer:" << buyer_origin
-                    << "; Error:" << request.status();
-=======
       PS_LOG(ERROR, SystemLogContext())
           << "Failed to create request for buyer:" << buyer_origin
           << "; Error:" << request.status();
->>>>>>> upstream-v3.11.0
       continue;
     }
     requests.emplace_back(*std::move(request));
@@ -247,11 +221,6 @@ BuyerReportingUdfFetchManager::PeriodicBuyerReportingFetchAndLoadSync() {
             PS_LOG(ERROR, SystemLogContext())
                 << "Failed origin " << buyer_origins[i] << " fetch at "
                 << requests[i].url << " with status: " << result.status();
-            continue;
-          }
-          if (auto status = ValidateUdfFetchResponse(*result); !status.ok()) {
-            PS_LOG(ERROR) << "UDF response failed validation for buyer:"
-                          << buyer_origins[i] << "; Error:" << status;
             continue;
           }
           if (i < config_.buyer_report_win_js_urls().size()) {

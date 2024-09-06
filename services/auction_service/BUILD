@@ -77,15 +77,11 @@ cc_library(
         "//services/auction_service/data:runtime_config",
         "//services/auction_service/reporting:reporting_helper",
         "//services/auction_service/reporting:reporting_response",
-<<<<<<< HEAD
-        "//services/auction_service/reporting/seller:seller_reporting_manager",
-=======
         "//services/auction_service/reporting/buyer:buyer_reporting_helper",
         "//services/auction_service/reporting/buyer:pa_buyer_reporting_manager",
         "//services/auction_service/reporting/seller:component_seller_reporting_manager",
         "//services/auction_service/reporting/seller:seller_reporting_manager",
         "//services/auction_service/reporting/seller:top_level_seller_reporting_manager",
->>>>>>> upstream-v3.11.0
         "//services/auction_service/utils:proto_utils",
         "//services/common/clients/code_dispatcher:code_dispatch_client",
         "//services/common/code_dispatch:code_dispatch_reactor",

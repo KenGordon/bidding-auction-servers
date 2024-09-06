@@ -397,16 +397,6 @@ void SelectAdReactor::FetchBids() {
     OnAllBidsDone(true);
     return;
   }
-  int user_bidding_signals = 0;
-  int bidding_signals_keys = 0;
-  int device_signals = 0;
-  int ad_render_ids = 0;
-  int component_ads = 0;
-  int igs_count = 0;
-
-  std::vector<std::pair<absl::string_view,
-                        std::unique_ptr<GetBidsRequest::GetBidsRawRequest>>>
-      get_bids_requests;
 
   std::vector<std::pair<absl::string_view,
                         std::unique_ptr<GetBidsRequest::GetBidsRawRequest>>>
@@ -427,6 +417,7 @@ void SelectAdReactor::FetchBids() {
     if (!auction_config_buyer_set.contains(buyer_ig_owner)) {
       continue;
     }
+
     const auto& buyer_input_iterator = buyer_inputs_->find(buyer_ig_owner);
     if (buyer_input_iterator == buyer_inputs_->end()) {
       PS_VLOG(kNoisyWarn, log_context_)
@@ -434,61 +425,12 @@ void SelectAdReactor::FetchBids() {
           << ", skipping buyer";
       continue;
     }
-    const BuyerInput& buyer_input = buyer_input_iterator->second;
-    for (const auto& interest_group : buyer_input.interest_groups()) {
-      igs_count += 1;
-      user_bidding_signals += interest_group.user_bidding_signals().size();
-      for (const auto& bidding_signal_key :
-           interest_group.bidding_signals_keys()) {
-        bidding_signals_keys += bidding_signal_key.size();
-      }
-      for (const auto& ad_render_id : interest_group.ad_render_ids()) {
-        ad_render_ids += ad_render_id.size();
-      }
-      for (const auto& component_ad : interest_group.component_ads()) {
-        component_ads += component_ad.size();
-      }
-      if (request_->client_type() == CLIENT_TYPE_BROWSER) {
-        device_signals += interest_group.browser_signals().ByteSizeLong();
-      } else if (request_->client_type() == CLIENT_TYPE_ANDROID) {
-        device_signals += interest_group.android_signals().ByteSizeLong();
-      }
-    }
 
-<<<<<<< HEAD
-    auto get_bids_request =
-        CreateGetBidsRequest(buyer_ig_owner, buyer_input_iterator->second);
-    get_bids_requests.push_back({buyer_ig_owner, std::move(get_bids_request)});
-    num_buyers_solicited++;
-=======
     auto get_bids_request = CreateGetBidsRequest(buyer_ig_owner.data(),
                                                  buyer_input_iterator->second);
     get_bids_requests.push_back({buyer_ig_owner, std::move(get_bids_request)});
->>>>>>> upstream-v3.11.0
   }
-  LogIfError(metric_context_->LogHistogram<metric::kUserBiddingSignalsSize>(
-      user_bidding_signals));
-  LogIfError(metric_context_->LogHistogram<metric::kBiddingSignalKeysSize>(
-      bidding_signals_keys));
-  LogIfError(
-      metric_context_->LogHistogram<metric::kAdRenderIDsSize>(ad_render_ids));
-  LogIfError(
-      metric_context_->LogHistogram<metric::kComponentAdsSize>(component_ads));
-  LogIfError(metric_context_->LogHistogram<metric::kIGCount>(igs_count));
-  LogIfError(metric_context_->LogHistogram<metric::kDeviceSignalsSize>(
-      device_signals));
 
-  if (chaffing_enabled && !chaffing_config.chaff_request_candidates.empty()) {
-    // Loop through chaff candidates and send 'num_chaff_requests' requests.
-    for (auto it = chaffing_config.chaff_request_candidates.begin();
-         it != chaffing_config.chaff_request_candidates.end(); ++it) {
-      if (std::distance(it, chaffing_config.chaff_request_candidates.begin()) >=
-          chaffing_config.num_chaff_requests) {
-        break;
-      }
-
-<<<<<<< HEAD
-=======
   if (chaffing_enabled_ && !chaffing_config.chaff_request_candidates.empty()) {
     // Loop through chaff candidates and send 'num_chaff_requests' requests.
     for (auto it = chaffing_config.chaff_request_candidates.begin();
@@ -498,7 +440,6 @@ void SelectAdReactor::FetchBids() {
         break;
       }
 
->>>>>>> upstream-v3.11.0
       auto get_bids_request =
           std::make_unique<GetBidsRequest::GetBidsRawRequest>();
       get_bids_request->set_is_chaff(true);
@@ -510,16 +451,6 @@ void SelectAdReactor::FetchBids() {
           },
           protected_auction_input_);
       get_bids_requests.push_back({it->data(), std::move(get_bids_request)});
-<<<<<<< HEAD
-    }
-
-    std::shuffle(get_bids_requests.begin(), get_bids_requests.end(),
-                 *generator_);
-  }
-
-  for (auto& [buyer_name, request] : get_bids_requests) {
-    FetchBid(buyer_name.data(), std::move(request));
-=======
     }
 
     std::shuffle(get_bids_requests.begin(), get_bids_requests.end(),
@@ -543,7 +474,6 @@ void SelectAdReactor::FetchBids() {
     PS_VLOG(kNoisyInfo, log_context_) << "Invoking buyer: " << buyer_name;
     FetchBid(buyer_name.data(), std::move(request));
     num_buyers_solicited++;
->>>>>>> upstream-v3.11.0
   }
 }
 
@@ -727,14 +657,11 @@ SelectAdReactor::CreateGetBidsRequest(const std::string& buyer_ig_owner,
 void SelectAdReactor::FetchBid(
     const std::string& buyer_ig_owner,
     std::unique_ptr<GetBidsRequest::GetBidsRawRequest> get_bids_request) {
-<<<<<<< HEAD
-=======
   if (enable_cancellation_ && request_context_->IsCancelled()) {
     async_task_tracker_.TaskCompleted(TaskStatus::CANCELLED);
     return;
   }
 
->>>>>>> upstream-v3.11.0
   const std::shared_ptr<BuyerFrontEndAsyncClient>& buyer_client =
       clients_.buyer_factory.Get(buyer_ig_owner);
 

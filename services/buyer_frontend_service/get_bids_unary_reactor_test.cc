@@ -291,11 +291,7 @@ TEST_F(GetBidUnaryReactorTest, VerifyLogContextPropagates) {
 }
 
 TEST_F(GetBidUnaryReactorTest, HandleChaffRequest) {
-<<<<<<< HEAD
-  absl::SetFlag(&FLAGS_enable_chaffing, true);
-=======
   get_bids_config_.is_chaffing_enabled = true;
->>>>>>> upstream-v3.11.0
 
   EXPECT_CALL(bidding_client_mock_, ExecuteInternal).Times(0);
 

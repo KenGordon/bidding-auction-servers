@@ -31,13 +31,9 @@
 #include "services/auction_service/auction_constants.h"
 #include "services/auction_service/benchmarking/score_ads_benchmarking_logger.h"
 #include "services/auction_service/benchmarking/score_ads_no_op_logger.h"
-<<<<<<< HEAD
-#include "services/auction_service/code_wrapper/seller_udf_wrapper.h"
-=======
 #include "services/auction_service/code_wrapper/buyer_reporting_udf_wrapper.h"
 #include "services/auction_service/code_wrapper/seller_udf_wrapper.h"
 #include "services/auction_service/reporting/buyer/pa_buyer_reporting_manager.h"
->>>>>>> upstream-v3.11.0
 #include "services/auction_service/reporting/reporting_helper.h"
 #include "services/auction_service/reporting/reporting_helper_test_constants.h"
 #include "services/auction_service/reporting/reporting_test_util.h"
@@ -2150,11 +2146,7 @@ TEST_F(ScoreAdsReactorTest,
   GetTestAdWithBidFoo(foo);
   GetTestAdWithBidBar(bar);
   BuildRawRequest({foo, bar}, kTestSellerSignals, kTestAuctionSignals,
-<<<<<<< HEAD
-                  kTestScoringSignals, kTestPublisherHostname, raw_request,
-=======
                   kTestScoringSignals, kTestPublisherHostName, raw_request,
->>>>>>> upstream-v3.11.0
                   enable_debug_reporting);
   RawRequest raw_request_copy = raw_request;
   absl::flat_hash_map<std::string, AdWithBidMetadata> id_to_ad;
@@ -2205,13 +2197,8 @@ TEST_F(ScoreAdsReactorTest,
       .enable_report_result_url_generation =
           enable_report_result_url_generation,
       .enable_seller_and_buyer_udf_isolation = true};
-<<<<<<< HEAD
-  const auto& response = ExecuteScoreAds(
-      raw_request, dispatcher, runtime_config, enable_debug_reporting);
-=======
   const auto& response =
       ExecuteScoreAds(raw_request, dispatcher, runtime_config);
->>>>>>> upstream-v3.11.0
 
   ScoreAdsResponse::ScoreAdsRawResponse raw_response;
   raw_response.ParseFromString(response.response_ciphertext());

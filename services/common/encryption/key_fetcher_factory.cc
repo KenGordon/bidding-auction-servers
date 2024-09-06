@@ -27,10 +27,7 @@
 
 #include "services/common/clients/config/trusted_server_config_client.h"
 #include "services/common/constants/common_service_flags.h"
-<<<<<<< HEAD
-=======
 #include "services/common/loggers/request_log_context.h"
->>>>>>> upstream-v3.11.0
 #include "services/common/public_key_url_allowlist.h"
 #include "services/common/util/request_response_constants.h"
 #include "src/concurrent/event_engine_executor.h"
@@ -70,12 +67,8 @@ CreatePublicKeyFetcher(TrustedServersConfigClient& config_client) {
       config_client.GetStringParameter(PUBLIC_KEY_ENDPOINT);
 
   if (!IsAllowedPublicKeyUrl(public_key_endpoint, PS_IS_PROD_BUILD)) {
-<<<<<<< HEAD
-    PS_LOG(ERROR) << kEndpointNotAllowlisted << public_key_endpoint;
-=======
     PS_LOG(ERROR, SystemLogContext())
         << kEndpointNotAllowlisted << public_key_endpoint;
->>>>>>> upstream-v3.11.0
     return nullptr;
   }
 
@@ -104,7 +97,7 @@ std::unique_ptr<KeyFetcherManagerInterface> CreateKeyFetcherManager(
     return std::make_unique<server_common::FakeKeyFetcherManager>();
   }
 
-  google::scp::cpio::PrivateKeyVendingEndpoint primary;
+  google::scp::cpio::PrivateKeyVendingEndpoint primary, secondary;
   primary.account_identity =
       config_client.GetStringParameter(PRIMARY_COORDINATOR_ACCOUNT_IDENTITY);
   primary.private_key_vending_service_endpoint =
@@ -112,6 +105,14 @@ std::unique_ptr<KeyFetcherManagerInterface> CreateKeyFetcherManager(
           PRIMARY_COORDINATOR_PRIVATE_KEY_ENDPOINT);
   primary.service_region =
       config_client.GetStringParameter(PRIMARY_COORDINATOR_REGION);
+
+  secondary.account_identity =
+      config_client.GetStringParameter(SECONDARY_COORDINATOR_ACCOUNT_IDENTITY);
+  secondary.private_key_vending_service_endpoint =
+      config_client.GetStringParameter(
+          SECONDARY_COORDINATOR_PRIVATE_KEY_ENDPOINT);
+  secondary.service_region =
+      config_client.GetStringParameter(SECONDARY_COORDINATOR_REGION);
 
   if (config_client.HasParameter(GCP_PRIMARY_WORKLOAD_IDENTITY_POOL_PROVIDER)) {
     primary.gcp_private_key_vending_service_cloudfunction_url =
@@ -149,13 +150,8 @@ std::unique_ptr<KeyFetcherManagerInterface> CreateKeyFetcherManager(
   absl::Duration private_key_ttl = absl::Seconds(
       config_client.GetIntParameter(PRIVATE_KEY_CACHE_TTL_SECONDS));
   std::unique_ptr<PrivateKeyFetcherInterface> private_key_fetcher =
-<<<<<<< HEAD
-      server_common::PrivateKeyFetcherFactory::Create(primary, secondaries,
-                                                      private_key_ttl);
-=======
-      server_common::PrivateKeyFetcherFactory::Create(
+     server_common::PrivateKeyFetcherFactory::Create(
           primary, {secondary}, private_key_ttl, SystemLogContext());
->>>>>>> upstream-v3.11.0
 
   absl::Duration key_refresh_flow_run_freq = absl::Seconds(
       config_client.GetIntParameter(KEY_REFRESH_FLOW_RUN_FREQUENCY_SECONDS));

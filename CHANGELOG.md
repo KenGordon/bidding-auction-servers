@@ -2,8 +2,6 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
-<<<<<<< HEAD
-=======
 ## 3.11.0 (2024-08-19)
 
 
@@ -136,7 +134,6 @@ All notable changes to this project will be documented in this file. See [commit
 * Update inference_sidecar README with model size limits
 * Updated expected format for INFERENCE_MODEL_BUCKET_PATHS in README
 
->>>>>>> upstream-v3.11.0
 ## 3.10.0 (2024-07-13)
 
 

@@ -29,10 +29,7 @@ cc_library(
         ":inference_flags",
         "//services/common/blob_fetch:blob_fetcher",
         "//services/common/clients/code_dispatcher:request_context",
-<<<<<<< HEAD
-=======
         "//services/common/loggers:request_log_context",
->>>>>>> upstream-v3.11.0
         "//services/common/metric:server_definition",
         "//services/common/util:request_response_constants",
         "@com_github_grpc_grpc//:grpc++",

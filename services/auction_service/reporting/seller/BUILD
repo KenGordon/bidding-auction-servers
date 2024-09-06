@@ -86,8 +86,6 @@ cc_test(
         "//services/auction_service/reporting:reporting_helper_test",
         "//services/auction_service/reporting:reporting_response",
         "//services/auction_service/reporting:reporting_test_util",
-<<<<<<< HEAD
-=======
         "//services/auction_service/udf_fetcher:adtech_code_version_util",
         "//services/common/clients/code_dispatcher:code_dispatch_client",
         "//services/common/code_dispatch:code_dispatch_reactor",
@@ -137,7 +135,6 @@ cc_test(
         "//services/auction_service/reporting:reporting_helper_test",
         "//services/auction_service/reporting:reporting_response",
         "//services/auction_service/reporting:reporting_test_util",
->>>>>>> upstream-v3.11.0
         "//services/auction_service/udf_fetcher:adtech_code_version_util",
         "//services/common/clients/code_dispatcher:code_dispatch_client",
         "//services/common/code_dispatch:code_dispatch_reactor",

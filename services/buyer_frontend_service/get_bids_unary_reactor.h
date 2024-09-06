@@ -93,17 +93,10 @@ class GetBidsUnaryReactor : public grpc::ServerUnaryReactor {
   GetBidsUnaryReactor& operator=(const GetBidsUnaryReactor&) = delete;
 
   // Starts the execution the request.
-<<<<<<< HEAD
-  void Execute();
-
-  // Handles the execution of chaff requests.
-  void ExecuteChaffRequest();
-=======
   void CancellableExecute();
 
   // Handles the execution of chaff requests.
   void CancellableExecuteChaffRequest();
->>>>>>> upstream-v3.11.0
 
   // Runs once the request has finished execution and deletes current instance.
   void OnDone() override;

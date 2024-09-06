@@ -143,11 +143,7 @@ GetBidsUnaryReactor::GetBidsUnaryReactor(
       config_(config),
       key_fetcher_manager_(key_fetcher_manager),
       crypto_client_(crypto_client),
-<<<<<<< HEAD
-      chaffing_enabled_(absl::GetFlag(FLAGS_enable_chaffing)),
-=======
       chaffing_enabled_(config_.is_chaffing_enabled),
->>>>>>> upstream-v3.11.0
       log_context_([this]() {
         decrypt_status_ = DecryptRequest();
         return RequestLogContext(
@@ -326,11 +322,8 @@ void GetBidsUnaryReactor::CancellableExecute() {
                                 << raw_request_.ShortDebugString();
   log_context_.SetEventMessageField(raw_request_);
 
-<<<<<<< HEAD
-=======
   LogIgMetric(raw_request_, *metric_context_);
 
->>>>>>> upstream-v3.11.0
   if (chaffing_enabled_ && raw_request_.is_chaff()) {
     ExecuteChaffRequest();
     return;
@@ -352,11 +345,7 @@ void GetBidsUnaryReactor::CancellableExecute() {
   MayGetProtectedSignalsBids();
 }
 
-<<<<<<< HEAD
-void GetBidsUnaryReactor::ExecuteChaffRequest() {
-=======
 void GetBidsUnaryReactor::CancellableExecuteChaffRequest() {
->>>>>>> upstream-v3.11.0
   // Sleep to make it seem (from the client's perspective) that the BFE is
   // processing the request.
   size_t chaff_request_duration = 0;

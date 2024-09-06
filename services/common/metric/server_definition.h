@@ -191,11 +191,7 @@ inline constexpr server_common::metrics::Definition<
     kBiddingInferenceRequestDuration(
         "bidding.inference.request.duration_ms",
         "Time taken by Roma callback to execute inference",
-<<<<<<< HEAD
-        server_common::metrics::kTimeHistogram, 300, 10);
-=======
         server_common::metrics::kTimeHistogram, 300, 0);
->>>>>>> upstream-v3.11.0
 
 inline constexpr absl::string_view kSellerRejectReasons[] = {
     kRejectionReasonBidBelowAuctionFloor,
@@ -466,61 +462,37 @@ inline constexpr server_common::metrics::Definition<
 inline constexpr server_common::metrics::Definition<
     int, server_common::metrics::Privacy::kNonImpacting,
     server_common::metrics::Instrument::kHistogram>
-<<<<<<< HEAD
-    kDeviceSignalsSize("device_signals.size_bytes",
-=======
     kDeviceSignalsSize("bfe.device_signals.size_bytes",
->>>>>>> upstream-v3.11.0
                        "Cumulative size of device_signals in Bytes",
                        server_common::metrics::kSizeHistogram);
 inline constexpr server_common::metrics::Definition<
     int, server_common::metrics::Privacy::kNonImpacting,
     server_common::metrics::Instrument::kHistogram>
-<<<<<<< HEAD
-    kAdRenderIDsSize("ad_render_ids.size_bytes",
-=======
     kAdRenderIDsSize("bfe.ad_render_ids.size_bytes",
->>>>>>> upstream-v3.11.0
                      "Cumulative size of ad_render_ids in Bytes",
                      server_common::metrics::kSizeHistogram);
 inline constexpr server_common::metrics::Definition<
     int, server_common::metrics::Privacy::kNonImpacting,
     server_common::metrics::Instrument::kHistogram>
-<<<<<<< HEAD
-    kBiddingSignalKeysSize("bidding_signal_keys.size_bytes",
-=======
     kBiddingSignalKeysSize("bfe.bidding_signal_keys.size_bytes",
->>>>>>> upstream-v3.11.0
                            "Cumulative size of bidding_signal_keys in Bytes",
                            server_common::metrics::kSizeHistogram);
 inline constexpr server_common::metrics::Definition<
     int, server_common::metrics::Privacy::kNonImpacting,
     server_common::metrics::Instrument::kHistogram>
-<<<<<<< HEAD
-    kUserBiddingSignalsSize("user_bidding_signals.size_bytes",
-=======
     kUserBiddingSignalsSize("bfe.user_bidding_signals.size_bytes",
->>>>>>> upstream-v3.11.0
                             "Cumulative size of user_bidding_signals in Bytes",
                             server_common::metrics::kSizeHistogram);
 inline constexpr server_common::metrics::Definition<
     int, server_common::metrics::Privacy::kNonImpacting,
     server_common::metrics::Instrument::kHistogram>
-<<<<<<< HEAD
-    kComponentAdsSize("component_ads.size_bytes",
-=======
     kComponentAdsSize("bfe.component_ads.size_bytes",
->>>>>>> upstream-v3.11.0
                       "Cumulative size of component_ads in Bytes",
                       server_common::metrics::kSizeHistogram);
 
 inline constexpr server_common::metrics::Definition<
     int, server_common::metrics::Privacy::kNonImpacting,
     server_common::metrics::Instrument::kHistogram>
-<<<<<<< HEAD
-    kIGCount("interest_groups_count", "Total number of interest groups",
-             kCountHistogram);
-=======
     kIGCount("bfe.interest_groups.count", "Total number of interest groups",
              kCountHistogram);
 inline constexpr server_common::metrics::Definition<
@@ -568,7 +540,6 @@ inline constexpr server_common::metrics::Definition<
         "inference.response.size_bytes",
         "Size of the inference response going out of the sidecar",
         server_common::metrics::kSizeHistogram, 100'000, 100);
->>>>>>> upstream-v3.11.0
 
 template <typename RequestT>
 struct RequestMetric;
@@ -600,14 +571,11 @@ inline constexpr const server_common::metrics::DefinitionName*
         &kJSExecutionErrorCount,
         &kBiddingErrorCountByErrorCode,
         &kBiddingInferenceRequestDuration,
-<<<<<<< HEAD
-=======
         &kInferenceRequestCount,
         &kInferenceRequestDuration,
         &kInferenceRequestSize,
         &kInferenceResponseSize,
         &kInferenceRequestFailedCountByStatus,
->>>>>>> upstream-v3.11.0
 };
 
 template <>
@@ -687,12 +655,6 @@ inline constexpr const server_common::metrics::DefinitionName*
         &kProtectedCiphertextSize,
         &kAuctionConfigSize,
         &kAuctionBidRejectedCount,
-        &kDeviceSignalsSize,
-        &kAdRenderIDsSize,
-        &kBiddingSignalKeysSize,
-        &kUserBiddingSignalsSize,
-        &kComponentAdsSize,
-        &kIGCount,
 };
 
 template <>

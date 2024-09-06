@@ -1252,9 +1252,6 @@ resource "google_monitoring_dashboard" "environment_dashboard" {
         },
         "width": 24,
         "xPos": 24,
-<<<<<<< HEAD
-        "yPos": 263
-=======
         "yPos": 266
       },
       {
@@ -1462,7 +1459,6 @@ resource "google_monitoring_dashboard" "environment_dashboard" {
         },
         "width": 24,
         "yPos": 323
->>>>>>> upstream-v3.11.0
       }
     ]
   }

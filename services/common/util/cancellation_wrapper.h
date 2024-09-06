@@ -25,8 +25,6 @@
 #include <grpcpp/grpcpp.h>
 
 #include "absl/status/status.h"
-<<<<<<< HEAD
-=======
 #include "services/common/util/error_categories.h"
 
 template <typename T>
@@ -40,50 +38,19 @@ struct is_status<absl::StatusOr<T>> : std::true_type {};
 
 template <typename T>
 constexpr bool is_status_v = is_status<T>::value;
->>>>>>> upstream-v3.11.0
 
 // Macro to wrap class functions with cancellation logic.
 // The wrapped function will check if cancellations are enabled and if the
 // current request is cancelled. If both are true then it will finish the
 // reactor and return a cancellation error status. However, if the wrapped
-<<<<<<< HEAD
-// function is void then it will simply return. Otherwise it will
-// return the wrapped function within a StatusOr.
-=======
 // function is void then it will simply return. If the wrapped function returns
 // a Status or a StatusOr then it will return a Status or a StatusOr
 // accordingly. Otherwise it will return the wrapped function within a StatusOr.
->>>>>>> upstream-v3.11.0
 // First argument is the name of the resulting wrapped function. This needs to
 // correspond to a class function with the same name with "Cancellable" in front
 // of the name.
 // Second argument is the boolean flag to enable cancellations.
 // Third argument is a pointer to the grpc client context.
-<<<<<<< HEAD
-// Returns StatusOr of the return type of the function being wrapped, but if the
-// return type is void then the resulting wrapped function is also void.
-#define CLASS_CANCELLATION_WRAPPER(function, flag, context)              \
-  template <typename... Args>                                            \
-  auto function(Args... args)                                            \
-      -> std::conditional_t<                                             \
-          std::is_void_v<decltype(this->Cancellable##function(           \
-              std::forward<Args>(args)...))>,                            \
-          void,                                                          \
-          absl::StatusOr<decltype(this->Cancellable##function(           \
-              std::forward<Args>(args)...))>> {                          \
-    if ((flag) && (context)->IsCancelled()) {                            \
-      FinishWithStatus(                                                  \
-          grpc::Status(grpc::StatusCode::CANCELLED, kRequestCancelled)); \
-      if constexpr (std::is_void_v<decltype(this->Cancellable##function( \
-                        std::forward<Args>(args)...))>) {                \
-        return;                                                          \
-      } else {                                                           \
-        return absl::CancelledError();                                   \
-      }                                                                  \
-    } else {                                                             \
-      return this->Cancellable##function(std::forward<Args>(args)...);   \
-    }                                                                    \
-=======
 // Fourth argument is a function that finishes the reactor and takes in a grpc
 // status as a parameter.
 // Returns StatusOr of the return type of the function being wrapped, but if the
@@ -115,7 +82,6 @@ constexpr bool is_status_v = is_status<T>::value;
     } else {                                                                \
       return this->Cancellable##function(std::forward<Args>(args)...);      \
     }                                                                       \
->>>>>>> upstream-v3.11.0
   }
 
 // Function to wrap other functions, like lambdas with cancellation logic.

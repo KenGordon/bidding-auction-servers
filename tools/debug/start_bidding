@@ -138,10 +138,7 @@ export SERVER_START_CMD=$(cat << END
       "urlFetchPeriodMs": 13000000,
       "urlFetchTimeoutMs": 30000,
     }' \
-<<<<<<< HEAD
-=======
 --buyer_code_fetch_config='${BUYER_CODE_FETCH_CONFIG}' \
->>>>>>> upstream-v3.11.0
 --enable_protected_app_signals="false" \
 --enable_otel_based_logging="true" \
 --consented_debug_token="test_token" \

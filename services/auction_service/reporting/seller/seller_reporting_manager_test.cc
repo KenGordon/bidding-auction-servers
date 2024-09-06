@@ -130,72 +130,12 @@ absl::StatusOr<std::string> BuildJsonObject(
   return SerializeJsonDoc(outerDoc);
 }
 
-<<<<<<< HEAD
-rapidjson::Document GetReportResultJsonObj(
-    const ReportResultResponse& report_result_response) {
-  rapidjson::Document document(rapidjson::kObjectType);
-  rapidjson::Value signals_for_winner_val(
-      report_result_response.signals_for_winner.c_str(),
-      document.GetAllocator());
-  document.AddMember(kSignalsForWinner, signals_for_winner_val,
-                     document.GetAllocator());
-  rapidjson::Value report_result_url(
-      report_result_response.report_result_url.c_str(),
-      document.GetAllocator());
-
-  document.AddMember(kReportResultUrl, report_result_url.Move(),
-                     document.GetAllocator());
-  document.AddMember(kSendReportToInvoked,
-                     report_result_response.send_report_to_invoked,
-                     document.GetAllocator());
-  document.AddMember(kRegisterAdBeaconInvoked,
-                     report_result_response.register_ad_beacon_invoked,
-                     document.GetAllocator());
-  rapidjson::Value map_value(rapidjson::kObjectType);
-  for (const auto& [event, url] :
-       report_result_response.interaction_reporting_urls) {
-    rapidjson::Value interaction_event(event.c_str(), document.GetAllocator());
-    rapidjson::Value interaction_url(url.c_str(), document.GetAllocator());
-    map_value.AddMember(interaction_event.Move(), interaction_url.Move(),
-                        document.GetAllocator());
-  }
-  document.AddMember(kInteractionReportingUrlsWrapperResponse, map_value,
-                     document.GetAllocator());
-  return document;
-}
-
-void TestResponse(const ReportResultResponse& report_result_response,
-                  const ReportResultResponse& expected_response) {
-  EXPECT_EQ(report_result_response.report_result_url,
-            expected_response.report_result_url);
-  EXPECT_EQ(report_result_response.interaction_reporting_urls.size(),
-            expected_response.interaction_reporting_urls.size());
-  EXPECT_EQ(report_result_response.signals_for_winner,
-            expected_response.signals_for_winner);
-}
-
-absl::StatusOr<std::string> BuildJsonObject(
-    const ReportResultResponse& response,
-    const ReportingResponseLogs& console_logs,
-    const ReportingDispatchRequestConfig& config) {
-  rapidjson::Document outerDoc(rapidjson::kObjectType);
-  rapidjson::Document report_result_obj = GetReportResultJsonObj(response);
-  if (config.enable_adtech_code_logging) {
-    SetAdTechLogs(console_logs, outerDoc);
-  }
-  outerDoc.AddMember(kResponse, report_result_obj, outerDoc.GetAllocator());
-  return SerializeJsonDoc(outerDoc);
-}
-
-TEST(TestSellerReportingManager, ReturnsRapidJsonDocOfSellerDeviceSignals) {
-=======
 class SellerReportingManagerTest : public ::testing::Test {
  protected:
   void SetUp() override { CommonTestInit(); }
 };
 
 TEST_F(SellerReportingManagerTest, ReturnsRapidJsonDocOfSellerDeviceSignals) {
->>>>>>> upstream-v3.11.0
   ScoreAdsResponse::AdScore winning_ad_score = GetTestWinningScoreAdsResponse();
   PostAuctionSignals post_auction_signals =
       GeneratePostAuctionSignals(winning_ad_score, kUsdIsoCode);
@@ -271,16 +211,9 @@ TEST_F(SellerReportingManagerTest,
   notification.WaitForNotification();
   ASSERT_FALSE(status.ok());
 }
-<<<<<<< HEAD
-
-TEST(ParseReportResultResponse, ParsesReportResultResponseSuccessfully) {
-  server_common::log::PS_VLOG_IS_ON(0, 10);
-
-=======
 TEST_F(SellerReportingManagerTest,
        ParseReportResultResponse_ParsesReportResultResponseSuccessfully) {
   server_common::log::SetGlobalPSVLogLevel(10);
->>>>>>> upstream-v3.11.0
   ReportResultResponse expected_response{
       .report_result_url = kTestReportResultUrl,
       .send_report_to_invoked = kSendReportToInvokedTrue,
@@ -302,13 +235,8 @@ TEST_F(SellerReportingManagerTest,
       ParseReportResultResponse(config, json_string.value(), log_context);
   TestResponse(response.value(), expected_response);
 }
-<<<<<<< HEAD
-
-TEST(ParseReportResultResponse, ParsingFailureReturnsNoOkStatus) {
-=======
 TEST_F(SellerReportingManagerTest,
        ParseReportResultResponse_ParsingFailureReturnsNoOkStatus) {
->>>>>>> upstream-v3.11.0
   std::string bad_json = "{abc:def hij:klm";
   RequestLogContext log_context(/*context_map=*/{},
                                 server_common::ConsentedDebugConfiguration());
@@ -316,9 +244,5 @@ TEST_F(SellerReportingManagerTest,
       ParseReportResultResponse({}, bad_json, log_context);
   EXPECT_FALSE(response.ok());
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> upstream-v3.11.0
 }  // namespace
 }  // namespace privacy_sandbox::bidding_auction_servers

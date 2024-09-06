@@ -448,16 +448,8 @@ std::pair<absl::Status, void*> MultiCurlHttpFetcherAsync::GetResultFromMsg(
           char* request_url = nullptr;
           curl_easy_getinfo(msg->easy_handle, CURLINFO_EFFECTIVE_URL,
                             &request_url);
-<<<<<<< HEAD
-          auto request_data = static_cast<CurlRequestData*>(output);
-          status = absl::InternalError(
-              absl::StrCat("Failed to curl ", request_url,
-                           "\nHTTP Code: ", http_code, "\nEndpoint returned: ",
-                           request_data->response_with_metadata.body));
-=======
           status = absl::InternalError(absl::StrCat(
               kFailCurl, " HTTP Code: ", http_code, "; ", request_url));
->>>>>>> upstream-v3.11.0
         } else {
           status = absl::OkStatus();
         }

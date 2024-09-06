@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-<<<<<<< HEAD
 # ---- Azure midification for docker registry config ----
 # This file has azure specific hack to configure docker registry.
 # `@<image name>-amd64-repo-digests-replace-marker@` is used to update repoDigest
@@ -20,9 +19,7 @@
 # If there is a way to configure repository and repoDigest as a bazel feature,
 # that would be better.
 
-=======
 load("@google_privacysandbox_servers_common//third_party:container_deps.bzl", common_container_deps = "container_deps")
->>>>>>> upstream-v3.11.0
 load("@io_bazel_rules_docker//container:container.bzl", "container_pull")
 load("@rules_oci//oci:pull.bzl", "oci_pull")
 

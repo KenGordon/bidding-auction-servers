@@ -20,14 +20,6 @@
 #include <string>
 
 #include "rapidjson/document.h"
-<<<<<<< HEAD
-#include "services/auction_service/reporting/reporting_response.h"
-
-namespace privacy_sandbox::bidding_auction_servers {
-// Sets console.log, console.warning, console.error console_logs in doc.
-void SetAdTechLogs(const ReportingResponseLogs& console_logs,
-                   rapidjson::Document& doc);
-=======
 #include "services/auction_service/reporting/reporting_helper.h"
 #include "services/auction_service/reporting/reporting_helper_test_constants.h"
 #include "services/auction_service/reporting/reporting_response.h"
@@ -91,7 +83,6 @@ void VerifyPABuyerReportingSignalsJson(
     const BuyerReportingDispatchRequestData&
         expected_buyer_dispatch_request_data,
     const SellerReportingDispatchRequestData& seller_dispatch_request_data);
->>>>>>> upstream-v3.11.0
 }  // namespace privacy_sandbox::bidding_auction_servers
 
 #endif  // SERVICES_AUCTION_SERVICE_REPORTING_TEST_UTIL_H_

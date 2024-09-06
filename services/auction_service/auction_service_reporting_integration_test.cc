@@ -42,9 +42,6 @@ constexpr absl::string_view kExpectedReportResultUrl =
     "test.com&bid=1&bidCurrency=EUR&highestScoringOtherBid=0&"
     "highestScoringOtherBidCurrency=???&topWindowHostname=fenceStreetJournal."
     "com&interestGroupOwner=barStandardAds.com";
-<<<<<<< HEAD
-constexpr char kTestIgOwner[] = "barStandardAds.com";
-=======
 constexpr absl::string_view kExpectedReportWinUrl =
     "http://test.com?seller=http://"
     "seller.com&interestGroupName=undefined&buyerReportingId=buyerReportingId&"
@@ -66,7 +63,6 @@ constexpr absl::string_view kTestTopLevelReportResultUrl =
     "fenceStreetJournal.com&interestGroupOwner=barStandardAds.com";
 constexpr absl::string_view kTestInteractionReportingUrl = "http://click.com";
 
->>>>>>> upstream-v3.11.0
 class AuctionServiceReportingIntegrationTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -79,9 +75,6 @@ class AuctionServiceReportingIntegrationTest : public ::testing::Test {
 };
 
 TEST_F(AuctionServiceReportingIntegrationTest,
-<<<<<<< HEAD
-       ScoresAdsReturnsReportResultUrlsWithSellerAndBuyerCodeIsolation) {
-=======
        ReportingForComponentAuctionSuccessWithSellerAndBuyerCodeIsolation) {
   ScoreAdsResponse response;
   AuctionServiceRuntimeConfig runtime_config = {
@@ -123,7 +116,6 @@ TEST_F(AuctionServiceReportingIntegrationTest,
 
 TEST_F(AuctionServiceReportingIntegrationTest,
        ReportingForTopLevelAuctionSuccessWithSellerAndBuyerCodeIsolation) {
->>>>>>> upstream-v3.11.0
   ScoreAdsResponse response;
   AuctionServiceRuntimeConfig runtime_config = {
       .enable_report_result_url_generation = true,
@@ -136,12 +128,8 @@ TEST_F(AuctionServiceReportingIntegrationTest,
   TestScoreAdsRequestConfig test_score_ads_request_config = {
       .test_buyer_reporting_signals = test_buyer_reporting_signals,
       .buyer_reporting_id = kBuyerReportingId,
-<<<<<<< HEAD
-      .interest_group_owner = kTestIgOwner};
-=======
       .interest_group_owner = kTestIgOwner,
       .component_auction_data = component_data};
->>>>>>> upstream-v3.11.0
   LoadAndRunScoreAdsForPA(runtime_config, test_score_ads_request_config,
                           kTestReportWinUdfWithValidation,
                           kSellerBaseCodeForComponentAuction, response);
@@ -190,15 +178,6 @@ TEST_F(AuctionServiceReportingIntegrationTest,
                           response);
   ScoreAdsResponse::ScoreAdsRawResponse raw_response;
   ASSERT_TRUE(raw_response.ParseFromString(response.response_ciphertext()));
-<<<<<<< HEAD
-  const auto& scoredAd = raw_response.ad_score();
-  EXPECT_GT(scoredAd.desirability(), 0);
-  EXPECT_EQ(scoredAd.win_reporting_urls()
-                .top_level_seller_reporting_urls()
-                .reporting_url(),
-            kExpectedReportResultUrl);
-  EXPECT_EQ(scoredAd.win_reporting_urls()
-=======
   const auto& score_ad = raw_response.ad_score();
   EXPECT_GT(score_ad.desirability(), 0);
   const auto& top_level_seller_reporting_urls =
@@ -306,25 +285,16 @@ TEST_F(AuctionServiceReportingIntegrationTest,
                 .reporting_url(),
             kExpectedReportResultUrl);
   EXPECT_EQ(score_ad.win_reporting_urls()
->>>>>>> upstream-v3.11.0
                 .top_level_seller_reporting_urls()
                 .interaction_reporting_urls()
                 .size(),
             1);
-<<<<<<< HEAD
-  EXPECT_EQ(scoredAd.win_reporting_urls()
-=======
   EXPECT_EQ(score_ad.win_reporting_urls()
->>>>>>> upstream-v3.11.0
                 .top_level_seller_reporting_urls()
                 .interaction_reporting_urls()
                 .at(kTestInteractionEvent),
             kTestInteractionReportingUrl);
-<<<<<<< HEAD
-  EXPECT_TRUE(scoredAd.win_reporting_urls()
-=======
   EXPECT_TRUE(score_ad.win_reporting_urls()
->>>>>>> upstream-v3.11.0
                   .buyer_reporting_urls()
                   .reporting_url()
                   .empty());

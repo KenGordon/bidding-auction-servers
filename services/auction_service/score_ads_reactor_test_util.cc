@@ -14,10 +14,7 @@
 
 #include "services/auction_service/score_ads_reactor_test_util.h"
 
-<<<<<<< HEAD
-=======
 #include "services/auction_service/code_wrapper/buyer_reporting_udf_wrapper.h"
->>>>>>> upstream-v3.11.0
 #include "services/auction_service/code_wrapper/seller_udf_wrapper.h"
 #include "services/common/constants/common_service_flags.h"
 #include "services/common/test/random.h"
@@ -130,11 +127,8 @@ absl::Status FakeExecute(std::vector<DispatchRequest>& batch,
     if (std::strcmp(request.handler_name.c_str(),
                     kReportingDispatchHandlerFunctionName) != 0 &&
         std::strcmp(request.handler_name.c_str(), kReportResultEntryFunction) !=
-<<<<<<< HEAD
-=======
             0 &&
         std::strcmp(request.handler_name.c_str(), kReportWinEntryFunction) !=
->>>>>>> upstream-v3.11.0
             0) {
       EXPECT_EQ(request.handler_name, "scoreAdEntryFunction");
     }

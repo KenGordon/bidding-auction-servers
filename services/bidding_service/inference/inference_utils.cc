@@ -40,10 +40,7 @@
 #include "rapidjson/writer.h"
 #include "services/bidding_service/inference/inference_flags.h"
 #include "services/common/clients/code_dispatcher/request_context.h"
-<<<<<<< HEAD
-=======
 #include "services/common/loggers/request_log_context.h"
->>>>>>> upstream-v3.11.0
 #include "services/common/metric/server_definition.h"
 #include "services/common/util/request_response_constants.h"
 #include "src/roma/interface/roma.h"
@@ -190,14 +187,8 @@ void RunInference(
   PredictRequest predict_request;
   predict_request.set_input(payload);
 
-<<<<<<< HEAD
-  absl::StatusOr<std::shared_ptr<RomaRequestContext>> roma_request_context =
-      wrapper.metadata.GetRomaRequestContext();
-  metric::BiddingContext* metric_context = nullptr;
-=======
   absl::StatusOr<std::shared_ptr<RomaRequestContextBidding>>
       roma_request_context = wrapper.metadata.GetRomaRequestContext();
->>>>>>> upstream-v3.11.0
 
   if (roma_request_context.ok()) {
     // Check if it is a Protected Audience request and the build flavor is prod
@@ -208,9 +199,6 @@ void RunInference(
              "production build.";
       return;
     }
-    // Retrieve the metric context from the RomaRequestContext
-    CHECK_OK((*roma_request_context)->GetMetricContext());
-    metric_context = (*roma_request_context)->GetMetricContext().value();
     predict_request.set_is_consented((*roma_request_context)->IsConsented());
   }
 
@@ -242,14 +230,6 @@ void RunInference(
                 ->AccumulateMetric<metric::kBiddingInferenceRequestDuration>(
                     inference_execution_time_ms));
       }
-    }
-    if (metric_context) {
-      int inference_execution_time_ms =
-          (absl::Now() - start_inference_execution_time) /
-          absl::Milliseconds(1);
-      LogIfError(metric_context
-                     ->LogHistogram<metric::kBiddingInferenceRequestDuration>(
-                         inference_execution_time_ms));
     }
     return;
   }

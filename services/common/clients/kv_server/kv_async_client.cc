@@ -18,10 +18,7 @@
 
 #include "include/grpcpp/support/status_code_enum.h"
 #include "services/common/clients/async_grpc/default_async_grpc_client.h"
-<<<<<<< HEAD
-=======
 #include "services/common/util/client_context_util.h"
->>>>>>> upstream-v3.11.0
 #include "src/communication/encoding_utils.h"
 #include "src/public/cpio/interface/crypto_client/crypto_client_interface.h"
 #include "src/public/cpio/proto/public_key_service/v1/public_key_service.pb.h"
@@ -80,13 +77,8 @@ void KVAsyncGrpcClient::SendRpc(
             privacy_sandbox::server_common::DecodeRequestPayload(
                 *plain_text_binary_http_response);
         if (!deframed_req.ok()) {
-<<<<<<< HEAD
-          PS_LOG(ERROR) << "Unpadding response failed: "
-                        << deframed_req.status();
-=======
           PS_LOG(ERROR, SystemLogContext())
               << "Unpadding response failed: " << deframed_req.status();
->>>>>>> upstream-v3.11.0
           params->OnDone(grpc::Status(grpc::StatusCode::INVALID_ARGUMENT,
                                       deframed_req.status().ToString()));
           return;

@@ -425,11 +425,7 @@ std::vector<AuctionResult> SetupComponentAuctionResults(
 
 TYPED_TEST(SellerFrontEndServiceTest,
            ReturnsInvalidInputOnInvalidExpectedComponentSellerCurrency) {
-<<<<<<< HEAD
-  this->config_.SetFlagForTest(kSampleSellerDomain, SELLER_ORIGIN_DOMAIN);
-=======
   this->config_.SetOverride(kSampleSellerDomain, SELLER_ORIGIN_DOMAIN);
->>>>>>> upstream-v3.11.0
 
   server_common::MockKeyFetcherManager key_fetcher_manager;
   EXPECT_CALL(key_fetcher_manager, GetPrivateKey)

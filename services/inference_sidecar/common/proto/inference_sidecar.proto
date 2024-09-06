@@ -49,11 +49,7 @@ message PredictResponse {
 message MetricValue {
   // Value of the metric.
   // TODO(b/349053046) :  Add support for other data types like double, etc.
-<<<<<<< HEAD
-  int64 value = 1;
-=======
   int32 value = 1;
->>>>>>> upstream-v3.11.0
   // Partition specifies a subgroup for the metric to facilitate segmented analysis.
   string partition = 2;
 }
