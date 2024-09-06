@@ -72,16 +72,19 @@ TEST(TrustedServerConfigClientTest, CanReadFlagsPassedThroughConstructor) {
 
   std::vector<std::future<void>> f;
   TrustedServersConfigClient config_client(
-      kFlags, [&f](const ParameterClientOptions& parameter_client_options) {
+      kFlags,
+      [&f](const ParameterClientOptions& parameter_client_options)
+          -> std::unique_ptr<ParameterClientInterface> {
         std::unique_ptr<MockParameterClient> mock_config_client =
             std::make_unique<MockParameterClient>();
         EXPECT_CALL(*mock_config_client, Init)
-            .WillOnce(Return(absl::OkStatus()));
+            .WillOnce(Return(SuccessExecutionResult()));
         EXPECT_CALL(*mock_config_client, Run)
-            .WillOnce(Return(absl::OkStatus()));
+            .WillOnce(Return(SuccessExecutionResult()));
         EXPECT_CALL(*mock_config_client, GetParameter)
             .WillRepeatedly([&f](const GetParameterRequest& get_param_req,
-                                 Callback<GetParameterResponse> callback) {
+                                 Callback<GetParameterResponse> callback)
+                                -> ExecutionResult {
               // async reading parameter like the real case.
               f.push_back(std::async(std::launch::async, [cb = std::move(
                                                               callback)]() {
@@ -91,9 +94,9 @@ TEST(TrustedServerConfigClientTest, CanReadFlagsPassedThroughConstructor) {
                        google::scp::core::errors::SC_CPIO_RESOURCE_NOT_FOUND),
                    response);
               }));
-              return absl::OkStatus();
+              return SuccessExecutionResult();
             });
-        return mock_config_client;
+        return std::move(mock_config_client);
       });
   config_client.SetFlag(FLAGS_config_param_1, "config_param_1");
   config_client.SetFlag(FLAGS_config_param_2, "config_param_2");
@@ -123,16 +126,19 @@ TEST(TrustedServerConfigClientTest, HasParameterWithValue) {
 
   std::vector<std::future<void>> f;
   TrustedServersConfigClient config_client(
-      kFlags, [&f](const ParameterClientOptions& parameter_client_options) {
+      kFlags,
+      [&](ParameterClientOptions parameter_client_options)
+          -> std::unique_ptr<ParameterClientInterface> {
         std::unique_ptr<MockParameterClient> mock_config_client =
             std::make_unique<MockParameterClient>();
         EXPECT_CALL(*mock_config_client, Init)
-            .WillOnce(Return(absl::OkStatus()));
+            .WillOnce(Return(SuccessExecutionResult()));
         EXPECT_CALL(*mock_config_client, Run)
-            .WillOnce(Return(absl::OkStatus()));
+            .WillOnce(Return(SuccessExecutionResult()));
         EXPECT_CALL(*mock_config_client, GetParameter)
-            .WillRepeatedly([&f](GetParameterRequest get_param_req,
-                                 Callback<GetParameterResponse> callback) {
+            .WillRepeatedly([&](GetParameterRequest get_param_req,
+                                Callback<GetParameterResponse> callback)
+                                -> ExecutionResult {
               // async reading parameter like the real case.
               f.push_back(std::async(std::launch::async, [cb = std::move(
                                                               callback)]() {
@@ -142,9 +148,9 @@ TEST(TrustedServerConfigClientTest, HasParameterWithValue) {
                        google::scp::core::errors::SC_CPIO_RESOURCE_NOT_FOUND),
                    response);
               }));
-              return absl::OkStatus();
+              return SuccessExecutionResult();
             });
-        return mock_config_client;
+        return std::move(mock_config_client);
       });
   config_client.SetFlag(FLAGS_config_param_1, "");
 
@@ -167,18 +173,21 @@ TEST(TrustedServerConfigClientTest, FetchesConfigValueFromConfigClient) {
 
   std::vector<std::future<void>> f;
   TrustedServersConfigClient config_client(
-      kFlags, [&f, &expected_param_values](
-                  const ParameterClientOptions& parameter_client_options) {
+      kFlags,
+      [&f, &expected_param_values](
+          const ParameterClientOptions& parameter_client_options)
+          -> std::unique_ptr<ParameterClientInterface> {
         std::unique_ptr<MockParameterClient> mock_config_client =
             std::make_unique<MockParameterClient>();
         EXPECT_CALL(*mock_config_client, Init)
-            .WillOnce(Return(absl::OkStatus()));
+            .WillOnce(Return(SuccessExecutionResult()));
         EXPECT_CALL(*mock_config_client, Run)
-            .WillOnce(Return(absl::OkStatus()));
+            .WillOnce(Return(SuccessExecutionResult()));
         EXPECT_CALL(*mock_config_client, GetParameter)
             .WillRepeatedly([&f, &expected_param_values](
                                 GetParameterRequest get_param_req,
-                                Callback<GetParameterResponse> callback) {
+                                Callback<GetParameterResponse> callback)
+                                -> ExecutionResult {
               // async reading parameter like the real case
               f.push_back(std::async(
                   std::launch::async,
@@ -190,9 +199,9 @@ TEST(TrustedServerConfigClientTest, FetchesConfigValueFromConfigClient) {
                         expected_param_values.at(req.parameter_name()));
                     cb(SuccessExecutionResult(), response);
                   }));
-              return absl::OkStatus();
+              return SuccessExecutionResult();
             });
-        return mock_config_client;
+        return std::move(mock_config_client);
       });
   ASSERT_TRUE(config_client.Init("").ok());
   for (auto& each : f) {
@@ -219,18 +228,21 @@ TEST(TrustedServerConfigClientTest, OverwritesConfigValueFromCloud) {
   };
   std::vector<std::future<void>> f;
   TrustedServersConfigClient config_client(
-      {key}, [&f, &expected_param_values](
-                 const ParameterClientOptions& parameter_client_options) {
+      {key},
+      [&f, &expected_param_values](
+          const ParameterClientOptions& parameter_client_options)
+          -> std::unique_ptr<ParameterClientInterface> {
         std::unique_ptr<MockParameterClient> mock_config_client =
             std::make_unique<MockParameterClient>();
         EXPECT_CALL(*mock_config_client, Init)
-            .WillOnce(Return(absl::OkStatus()));
+            .WillOnce(Return(SuccessExecutionResult()));
         EXPECT_CALL(*mock_config_client, Run)
-            .WillOnce(Return(absl::OkStatus()));
+            .WillOnce(Return(SuccessExecutionResult()));
         EXPECT_CALL(*mock_config_client, GetParameter)
             .WillRepeatedly([&f, &expected_param_values](
                                 GetParameterRequest get_param_req,
-                                Callback<GetParameterResponse> callback) {
+                                Callback<GetParameterResponse> callback)
+                                -> ExecutionResult {
               // async reading parameter like the real case
               f.push_back(std::async(
                   std::launch::async,
@@ -242,9 +254,9 @@ TEST(TrustedServerConfigClientTest, OverwritesConfigValueFromCloud) {
                         expected_param_values.at(req.parameter_name()));
                     cb(SuccessExecutionResult(), response);
                   }));
-              return absl::OkStatus();
+              return SuccessExecutionResult();
             });
-        return mock_config_client;
+        return std::move(mock_config_client);
       });
   config_client.SetFlag(FLAGS_config_param_5, "config_param_5");
   ASSERT_TRUE(config_client.Init("").ok());
@@ -261,15 +273,16 @@ TEST(TrustedServerConfigClientTest, ThrowsUnavailableErrorOnClientInitFail) {
 
   TrustedServersConfigClient config_client(
       {"config_param_1"},
-      [](const ParameterClientOptions& parameter_client_options) {
+      [](const ParameterClientOptions& parameter_client_options)
+          -> std::unique_ptr<ParameterClientInterface> {
         std::unique_ptr<MockParameterClient> mock_config_client =
             std::make_unique<MockParameterClient>();
         EXPECT_CALL(*mock_config_client, Init())
-            .WillOnce(Return(absl::OkStatus()));
+            .WillOnce(Return(SuccessExecutionResult()));
         EXPECT_CALL(*mock_config_client, Run())
-            .WillOnce(Return(absl::UnknownError("")));
+            .WillOnce(Return(FailureExecutionResult(0)));
 
-        return mock_config_client;
+        return std::move(mock_config_client);
       });
   absl::Status init_result = config_client.Init("");
 
@@ -279,16 +292,18 @@ TEST(TrustedServerConfigClientTest, ThrowsUnavailableErrorOnClientInitFail) {
 TEST(TrustedServerConfigClientTest, PrependsFlagNamesWithTag) {
   TrustedServersConfigClient config_client(
       {"config_param_1"},
-      [](const ParameterClientOptions& parameter_client_options) {
+      [](const ParameterClientOptions& parameter_client_options)
+          -> std::unique_ptr<ParameterClientInterface> {
         std::unique_ptr<MockParameterClient> mock_config_client =
             std::make_unique<MockParameterClient>();
         EXPECT_CALL(*mock_config_client, Init())
-            .WillOnce(Return(absl::OkStatus()));
+            .WillOnce(Return(SuccessExecutionResult()));
         EXPECT_CALL(*mock_config_client, Run())
-            .WillOnce(Return(absl::OkStatus()));
+            .WillOnce(Return(SuccessExecutionResult()));
         EXPECT_CALL(*mock_config_client, GetParameter)
             .WillOnce([](const GetParameterRequest& get_param_req,
-                         const Callback<GetParameterResponse>& callback) {
+                         const Callback<GetParameterResponse>& callback)
+                          -> ExecutionResult {
               // Verify we query for fetched config values with the prefix.
               EXPECT_EQ(get_param_req.parameter_name(),
                         "MyConfigParamPrefix-config_param_1");
@@ -296,9 +311,9 @@ TEST(TrustedServerConfigClientTest, PrependsFlagNamesWithTag) {
               GetParameterResponse response;
               response.set_parameter_value("config_value_1");
               callback(SuccessExecutionResult(), response);
-              return absl::OkStatus();
+              return SuccessExecutionResult();
             });
-        return mock_config_client;
+        return std::move(mock_config_client);
       });
   ASSERT_TRUE(config_client.Init("MyConfigParamPrefix-").ok());
 

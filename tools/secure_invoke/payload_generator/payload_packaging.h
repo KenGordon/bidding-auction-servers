@@ -126,15 +126,13 @@ std::pair<std::unique_ptr<SelectAdRequest>,
 PackagePlainTextSelectAdRequest(
     absl::string_view input_json_str, ClientType client_type,
     const HpkeKeyset& keyset, bool enable_debug_reporting = false,
-    absl::string_view protected_app_signals_json = "",
-    bool enable_unlimited_egress = false);
+    absl::string_view protected_app_signals_json = "");
 
 // This method returns a SelectAdRequest json for testing B&A servers in
 // "test_mode" using the PackagePlainTextSelectAdRequest method.
 std::string PackagePlainTextSelectAdRequestToJson(
     absl::string_view input_json_str, ClientType client_type,
-    const HpkeKeyset& keyset, bool enable_debug_reporting = false,
-    bool enable_unlimited_egress = false);
+    const HpkeKeyset& keyset, bool enable_debug_reporting = false);
 }  // namespace privacy_sandbox::bidding_auction_servers
 
 #endif  // TOOLS_PAYLOAD_GENERATOR_PAYLOAD_PACKAGING_H_

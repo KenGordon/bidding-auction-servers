@@ -129,14 +129,13 @@ class AsyncClientMock
        absl::Duration timeout),
       (const, override));
 
-  using OnDoneCallbackType =
-      absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<RawResponse>>,
-                              ResponseMetadata) &&>;
-  MOCK_METHOD(absl::Status, ExecuteInternal,
-              (std::unique_ptr<RawRequest> raw_request,
-               const RequestMetadata& metadata, OnDoneCallbackType on_done,
-               absl::Duration timeout, RequestConfig request_config),
-              (override));
+  MOCK_METHOD(
+      absl::Status, ExecuteInternal,
+      (std::unique_ptr<RawRequest> raw_request, const RequestMetadata& metadata,
+       absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<RawResponse>>) &&>
+           on_done,
+       absl::Duration timeout),
+      (const, override));
 };
 
 using BuyerFrontEndAsyncClientMock =
@@ -177,10 +176,6 @@ class MockHttpFetcherAsync : public HttpFetcherAsync {
   MOCK_METHOD(void, FetchUrls,
               (const std::vector<HTTPRequest>& requests, absl::Duration timeout,
                OnDoneFetchUrls done_callback),
-              (override));
-  MOCK_METHOD(void, FetchUrlsWithMetadata,
-              (const std::vector<HTTPRequest>& requests, absl::Duration timeout,
-               OnDoneFetchUrlsWithMetadata done_callback),
               (override));
 };
 
@@ -309,13 +304,8 @@ class BuyerFrontEndServiceMock : public BuyerFrontEnd::CallbackService {
 class BuyerFrontEndAsyncClientFactoryMock
     : public ClientFactory<BuyerFrontEndAsyncClient, absl::string_view> {
  public:
-  MOCK_METHOD(std::shared_ptr<BuyerFrontEndAsyncClient>, Get,
+  MOCK_METHOD(std::shared_ptr<const BuyerFrontEndAsyncClient>, Get,
               (absl::string_view), (const, override));
-
-  MOCK_METHOD(
-      (std::vector<std::pair<absl::string_view,
-                             std::shared_ptr<BuyerFrontEndAsyncClient>>>),
-      Entries, (), (const, override));
 };
 
 // Dummy server in lieu of no support for mocking async stubs.
@@ -344,7 +334,7 @@ class KVServiceMock : public kv_server::v2::KeyValueService::CallbackService {
 
 class MockV8Dispatcher : public V8Dispatcher {
  public:
-  ~MockV8Dispatcher() override = default;
+  virtual ~MockV8Dispatcher() = default;
   MOCK_METHOD(absl::Status, Init, ());
   MOCK_METHOD(absl::Status, Stop, ());
   MOCK_METHOD(absl::Status, LoadSync,

@@ -32,8 +32,9 @@ constexpr int kNumMaxThreads = 10;
 
 class AsyncTasksTrackerTest : public testing::Test {
  protected:
-  RequestLogContext log_context_{absl::btree_map<std::string, std::string>{},
-                                 server_common::ConsentedDebugConfiguration()};
+  server_common::log::ContextImpl log_context_{
+      absl::btree_map<std::string, std::string>{},
+      server_common::ConsentedDebugConfiguration()};
   absl::Notification notification_;
 };
 
@@ -96,23 +97,8 @@ TEST_F(AsyncTasksTrackerTest, CallsBackOnTaskEmptyResponse) {
   t.join();
 }
 
-TEST_F(AsyncTasksTrackerTest, CallsBackOnCancelledResponse) {
-  AsyncTaskTracker task_tracker(1, log_context_, [this](bool any_successful) {
-    // No task errored and one task successful =>
-    // chaff to the caller.
-    EXPECT_TRUE(any_successful);
-    notification_.Notify();
-  });
-
-  std::thread t(
-      [&task_tracker]() { task_tracker.TaskCompleted(TaskStatus::CANCELLED); });
-
-  notification_.WaitForNotification();
-  t.join();
-}
-
 TEST_F(AsyncTasksTrackerTest, DeclaresSuccessIfAnyTaskSucceeded) {
-  AsyncTaskTracker task_tracker(5, log_context_, [this](bool any_successful) {
+  AsyncTaskTracker task_tracker(4, log_context_, [this](bool any_successful) {
     // At least one task succeeded => succeeded
     // overall.
     EXPECT_TRUE(any_successful);
@@ -120,9 +106,8 @@ TEST_F(AsyncTasksTrackerTest, DeclaresSuccessIfAnyTaskSucceeded) {
   });
 
   std::vector<std::thread> threads;
-  for (auto status :
-       {TaskStatus::SUCCESS, TaskStatus::ERROR, TaskStatus::SKIPPED,
-        TaskStatus::EMPTY_RESPONSE, TaskStatus::CANCELLED}) {
+  for (auto status : {TaskStatus::SUCCESS, TaskStatus::ERROR,
+                      TaskStatus::SKIPPED, TaskStatus::EMPTY_RESPONSE}) {
     threads.emplace_back(
         [&task_tracker, status]() { task_tracker.TaskCompleted(status); });
   }
@@ -134,7 +119,7 @@ TEST_F(AsyncTasksTrackerTest, DeclaresSuccessIfAnyTaskSucceeded) {
 }
 
 TEST_F(AsyncTasksTrackerTest, DeclaresSuccessIfNoTaskExplicitlyFailed) {
-  AsyncTaskTracker task_tracker(4, log_context_, [this](bool any_successful) {
+  AsyncTaskTracker task_tracker(3, log_context_, [this](bool any_successful) {
     // No task errored (but there is either a
     // skipped or empty response) => succeeded
     // overall.
@@ -143,8 +128,8 @@ TEST_F(AsyncTasksTrackerTest, DeclaresSuccessIfNoTaskExplicitlyFailed) {
   });
 
   std::vector<std::thread> threads;
-  for (auto status : {TaskStatus::ERROR, TaskStatus::SKIPPED,
-                      TaskStatus::EMPTY_RESPONSE, TaskStatus::CANCELLED}) {
+  for (auto status :
+       {TaskStatus::ERROR, TaskStatus::SKIPPED, TaskStatus::EMPTY_RESPONSE}) {
     threads.emplace_back(
         [&task_tracker, status]() { task_tracker.TaskCompleted(status); });
   }

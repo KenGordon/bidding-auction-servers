@@ -26,6 +26,7 @@ load(
 )
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_pkg//pkg:zip.bzl", "pkg_zip")
+load("//:config.bzl", "LOG_ENV_VARS")
 
 pkg_files(
     name = "server_executables",
@@ -122,6 +123,7 @@ container_image(
         "/server/bin/init_server_basic",
     ],
     entrypoint = ["sh"],
+    env = LOG_ENV_VARS,
     labels = {"tee.launch_policy.log_redirect": "always"},
     layers = [
         ":server_binary_layer",

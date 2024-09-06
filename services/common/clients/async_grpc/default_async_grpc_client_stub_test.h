@@ -113,29 +113,6 @@ void SetupMockCryptoClientWrapper(T request,
       .WillOnce(testing::Return(aead_decrypt_response));
 }
 
-void MockHpkeEncryptCall(const MockCryptoClientWrapper& crypto_client,
-                         absl::string_view encoded_payload) {
-  google::cmrt::sdk::crypto_service::v1::HpkeEncryptResponse
-      hpke_encrypt_response;
-  hpke_encrypt_response.set_secret(kTestSecret);
-  hpke_encrypt_response.mutable_encrypted_data()->set_key_id(kTestKeyId);
-  hpke_encrypt_response.mutable_encrypted_data()->set_ciphertext(
-      encoded_payload);
-  EXPECT_CALL(crypto_client, HpkeEncrypt)
-      .Times(testing::AnyNumber())
-      .WillOnce(testing::Return(hpke_encrypt_response));
-}
-
-void MockAeadDecryptCall(const MockCryptoClientWrapper& crypto_client,
-                         absl::string_view encoded_payload) {
-  google::cmrt::sdk::crypto_service::v1::AeadDecryptResponse
-      aead_decrypt_response;
-  aead_decrypt_response.set_payload(encoded_payload);
-  EXPECT_CALL(crypto_client, AeadDecrypt)
-      .Times(AnyNumber())
-      .WillOnce(testing::Return(aead_decrypt_response));
-}
-
 TYPED_TEST_P(AsyncGrpcClientStubTest, CallsServerWithRequest) {
   using ServiceThread = typename TypeParam::ServiceThreadType;
   using Request = typename TypeParam::RequestType;
@@ -173,8 +150,9 @@ TYPED_TEST_P(AsyncGrpcClientStubTest, CallsServerWithRequest) {
   auto status = class_under_test.ExecuteInternal(
       std::move(input_request_ptr), {},
       [&notification](
-          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response,
-          ResponseMetadata response_metadata) { notification.Notify(); });
+          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response) {
+        notification.Notify();
+      });
   CHECK_OK(status);
   notification.WaitForNotification();
   EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(
@@ -219,16 +197,16 @@ TYPED_TEST_P(AsyncGrpcClientStubTest, CallsServerWithMetadata) {
   MockCryptoClientWrapper crypto_client;
   SetupMockCryptoClientWrapper(raw_request, crypto_client);
   auto key_fetcher_manager =
-      CreateKeyFetcherManager(config_client, /* public_key_fetcher= */
-                              nullptr);
+      CreateKeyFetcherManager(config_client, /* public_key_fetcher= */ nullptr);
   TestClient class_under_test(key_fetcher_manager.get(), &crypto_client,
                               client_config);
   absl::Notification notification;
   auto status = class_under_test.ExecuteInternal(
       std::make_unique<RawRequest>(), sent_metadata,
       [&notification](
-          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response,
-          ResponseMetadata response_metadata) { notification.Notify(); });
+          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response) {
+        notification.Notify();
+      });
   CHECK_OK(status);
   notification.WaitForNotification();
 
@@ -269,8 +247,7 @@ TYPED_TEST_P(AsyncGrpcClientStubTest, PassesStatusToCallback) {
   MockCryptoClientWrapper crypto_client;
   SetupMockCryptoClientWrapper(raw_request, crypto_client);
   auto key_fetcher_manager =
-      CreateKeyFetcherManager(config_client, /* public_key_fetcher= */
-                              nullptr);
+      CreateKeyFetcherManager(config_client, /* public_key_fetcher= */ nullptr);
   TestClient class_under_test(key_fetcher_manager.get(), &crypto_client,
                               client_config);
   absl::Notification notification;
@@ -278,8 +255,7 @@ TYPED_TEST_P(AsyncGrpcClientStubTest, PassesStatusToCallback) {
   auto status = class_under_test.ExecuteInternal(
       std::move(input_request_ptr), {},
       [&notification](
-          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response,
-          ResponseMetadata response_metadata) {
+          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response) {
         EXPECT_EQ(get_values_response.status().code(),
                   absl::StatusCode::kInvalidArgument);
         notification.Notify();
@@ -329,15 +305,15 @@ TYPED_TEST_P(AsyncGrpcClientStubTest, CallsServerWithTimeout) {
   MockCryptoClientWrapper crypto_client;
   SetupMockCryptoClientWrapper(raw_request, crypto_client);
   auto key_fetcher_manager =
-      CreateKeyFetcherManager(config_client, /* public_key_fetcher= */
-                              nullptr);
+      CreateKeyFetcherManager(config_client, /* public_key_fetcher= */ nullptr);
   TestClient class_under_test(key_fetcher_manager.get(), &crypto_client,
                               client_config);
   auto status = class_under_test.ExecuteInternal(
       std::move(input_request_ptr), {},
       [&notification](
-          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response,
-          ResponseMetadata response_metadata) { notification.Notify(); },
+          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response) {
+        notification.Notify();
+      },
       timeout);
   CHECK_OK(status);
   notification.WaitForNotification();
@@ -376,8 +352,7 @@ TYPED_TEST_P(AsyncGrpcClientStubTest, PassesResponseToCallback) {
   MockCryptoClientWrapper crypto_client;
   SetupMockCryptoClientWrapper(raw_request, crypto_client);
   auto key_fetcher_manager =
-      CreateKeyFetcherManager(config_client, /* public_key_fetcher= */
-                              nullptr);
+      CreateKeyFetcherManager(config_client, /* public_key_fetcher= */ nullptr);
   TestClient class_under_test(key_fetcher_manager.get(), &crypto_client,
                               client_config);
   absl::Notification notification;
@@ -386,8 +361,7 @@ TYPED_TEST_P(AsyncGrpcClientStubTest, PassesResponseToCallback) {
   auto status = class_under_test.ExecuteInternal(
       std::move(input_request_ptr), {},
       [&notification, &expected_output](
-          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response,
-          ResponseMetadata response_metadata) {
+          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response) {
         EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(
             **get_values_response, expected_output));
         notification.Notify();
@@ -425,8 +399,7 @@ TYPED_TEST_P(AsyncGrpcClientStubTest, DoesNotExecuteCallbackOnSyncError) {
   MockCryptoClientWrapper crypto_client;
   SetupMockCryptoClientError(raw_request, crypto_client);
   auto key_fetcher_manager =
-      CreateKeyFetcherManager(config_client, /* public_key_fetcher= */
-                              nullptr);
+      CreateKeyFetcherManager(config_client, /* public_key_fetcher= */ nullptr);
   TestClient class_under_test(key_fetcher_manager.get(), &crypto_client,
                               client_config);
   absl::Notification notification;
@@ -435,8 +408,7 @@ TYPED_TEST_P(AsyncGrpcClientStubTest, DoesNotExecuteCallbackOnSyncError) {
   auto status = class_under_test.ExecuteInternal(
       std::move(input_request_ptr), {},
       [&notification](
-          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response,
-          ResponseMetadata response_metadata) {
+          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response) {
         EXPECT_FALSE(get_values_response.ok());
         notification.Notify();
       },
@@ -475,8 +447,7 @@ TYPED_TEST_P(AsyncGrpcClientStubTest, ExecutesCallbackOnTimeout) {
   MockCryptoClientWrapper crypto_client;
   SetupMockCryptoClientWrapper(raw_request, crypto_client);
   auto key_fetcher_manager =
-      CreateKeyFetcherManager(config_client, /* public_key_fetcher= */
-                              nullptr);
+      CreateKeyFetcherManager(config_client, /* public_key_fetcher= */ nullptr);
   TestClient class_under_test(key_fetcher_manager.get(), &crypto_client,
                               client_config);
   absl::Notification notification;
@@ -485,8 +456,7 @@ TYPED_TEST_P(AsyncGrpcClientStubTest, ExecutesCallbackOnTimeout) {
   auto status = class_under_test.ExecuteInternal(
       std::move(input_request_ptr), {},
       [&notification](
-          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response,
-          ResponseMetadata response_metadata) {
+          absl::StatusOr<std::unique_ptr<RawResponse>> get_values_response) {
         EXPECT_FALSE(get_values_response.ok());
         notification.Notify();
       },

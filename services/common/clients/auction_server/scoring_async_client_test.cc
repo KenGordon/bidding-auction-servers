@@ -95,8 +95,7 @@ TEST(ScoringAsyncClientTest, CallServerWithEncryptionEnabled_Success) {
       std::make_unique<ScoreAdsRequest::ScoreAdsRawRequest>(std::move(request)),
       {},
       [&](absl::StatusOr<std::unique_ptr<ScoreAdsResponse::ScoreAdsRawResponse>>
-              callback_response,
-          ResponseMetadata response_metadata) {
+              callback_response) {
         std::string difference;
         google::protobuf::util::MessageDifferencer differencer;
         differencer.ReportDifferencesToString(&difference);
@@ -145,8 +144,7 @@ TEST(ScoringAsyncClientTest,
   absl::Status execute_result = class_under_test.ExecuteInternal(
       std::make_unique<ScoreAdsRequest::ScoreAdsRawRequest>(), {},
       [](absl::StatusOr<std::unique_ptr<ScoreAdsResponse::ScoreAdsRawResponse>>
-             callback_response,
-         ResponseMetadata response_metadata) {  // Never called
+             callback_response) {  // Never called
       });
   EXPECT_FALSE(execute_result.ok());
 }
@@ -206,8 +204,7 @@ TEST(ScoringAsyncClientTest,
       std::make_unique<ScoreAdsRequest::ScoreAdsRawRequest>(std::move(request)),
       {},
       [&](absl::StatusOr<std::unique_ptr<ScoreAdsResponse::ScoreAdsRawResponse>>
-              callback_response,
-          ResponseMetadata response_metadata) {
+              callback_response) {
         EXPECT_FALSE(callback_response.ok());
         notification.Notify();
       });

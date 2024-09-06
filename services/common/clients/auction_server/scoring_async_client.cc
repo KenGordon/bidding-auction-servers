@@ -26,9 +26,9 @@ ScoringAsyncGrpcClient::ScoringAsyncGrpcClient(
     CryptoClientWrapperInterface* crypto_client,
     const AuctionServiceClientConfig& client_config)
     : DefaultAsyncGrpcClient(key_fetcher_manager, crypto_client) {
-  stub_ = Auction::NewStub(CreateChannel(
-      client_config.server_addr, client_config.compression,
-      client_config.secure_client, client_config.grpc_arg_default_authority));
+  stub_ = Auction::NewStub(CreateChannel(client_config.server_addr,
+                                         client_config.compression,
+                                         client_config.secure_client));
 }
 
 void ScoringAsyncGrpcClient::SendRpc(
@@ -40,8 +40,8 @@ void ScoringAsyncGrpcClient::SendRpc(
       params->ContextRef(), params->RequestRef(), params->ResponseRef(),
       [this, params, hpke_secret](const grpc::Status& status) {
         if (!status.ok()) {
-          PS_LOG(ERROR) << "SendRPC completion status not ok: "
-                        << server_common::ToAbslStatus(status);
+          PS_VLOG(1) << "SendRPC completion status not ok: "
+                     << server_common::ToAbslStatus(status);
           params->OnDone(status);
           return;
         }
@@ -50,7 +50,7 @@ void ScoringAsyncGrpcClient::SendRpc(
         auto decrypted_response =
             DecryptResponse(hpke_secret, params->ResponseRef());
         if (!decrypted_response.ok()) {
-          PS_LOG(ERROR) << "ScoringAsyncGrpcClient Failed to decrypt response";
+          PS_VLOG(1) << "ScoringAsyncGrpcClient Failed to decrypt response";
           params->OnDone(grpc::Status(grpc::StatusCode::INVALID_ARGUMENT,
                                       decrypted_response.status().ToString()));
           return;

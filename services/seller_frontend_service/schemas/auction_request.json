@@ -16,10 +16,9 @@
     },
     "generationId": {
       "type": "string",
-      "format": "uuid"
+      "format": "uri"
     },
     "enableDebugReporting": { "type": "boolean" }
   },
-  "required": ["version", "interestGroups", "publisher", "generationId"],
-  "additionalProperties": false
+  "required": ["version", "interestGroups", "publisher", "generationId"]
 }

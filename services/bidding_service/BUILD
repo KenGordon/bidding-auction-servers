@@ -13,11 +13,6 @@
 # limitations under the License.
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_proto_library", "cc_test")
-load(
-    "@rules_pkg//pkg:mappings.bzl",
-    "pkg_attributes",
-    "pkg_files",
-)
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//:config.bzl", "ENABLE_CORE_DUMPS_DEFINES")
 
@@ -45,16 +40,15 @@ cc_library(
     deps = [
         ":bidding_code_fetch_config_cc_proto",
         "//services/bidding_service/code_wrapper:buyer_code_wrapper",
-        "//services/common/blob_fetch:fetch_mode_cc_proto",
         "//services/common/clients/code_dispatcher:v8_dispatcher",
         "//services/common/code_fetch:periodic_bucket_fetcher",
         "//services/common/code_fetch:periodic_code_fetcher",
-        "//services/common/loggers:request_log_context",
         "//services/common/util:file_util",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
         "@google_privacysandbox_servers_common//src/concurrent:executor",
+        "@google_privacysandbox_servers_common//src/logger:request_context_impl",
         "@google_privacysandbox_servers_common//src/public/core/interface:errors",
         "@google_privacysandbox_servers_common//src/public/core/interface:execution_result",
         "@google_privacysandbox_servers_common//src/public/cpio/interface:cpio",
@@ -105,11 +99,9 @@ cc_library(
         "//services/bidding_service/benchmarking:bidding_no_op_logger",
         "//services/bidding_service/code_wrapper:buyer_code_wrapper",
         "//services/bidding_service/data:runtime_config",
-        "//services/common:feature_flags",
         "//services/common/clients/code_dispatcher:code_dispatch_client",
         "//services/common/clients/kv_server:kv_async_client",
         "//services/common/code_dispatch:code_dispatch_reactor",
-        "//services/common/loggers:request_log_context",
         "//services/common/metric:server_definition",
         "//services/common/util:json_util",
         "//services/common/util:request_metadata",
@@ -117,6 +109,7 @@ cc_library(
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",
+        "@google_privacysandbox_servers_common//src/logger:request_context_impl",
         "@google_privacysandbox_servers_common//src/util/status_macro:status_macros",
         "@google_privacysandbox_servers_common//src/util/status_macro:status_util",
         "@rapidjson",
@@ -177,9 +170,6 @@ cc_test(
     srcs = [
         "bidding_service_integration_test.cc",
     ],
-    tags = [
-        "flaky",
-    ],
     deps = [
         ":bidding_service",
         ":generate_bids_reactor",
@@ -192,7 +182,6 @@ cc_test(
         "//services/common/encryption:mock_crypto_client_wrapper",
         "//services/common/test:mocks",
         "//services/common/test:random",
-        "@com_google_absl//absl/debugging:failure_signal_handler",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
@@ -230,7 +219,6 @@ proto_library(
     name = "bidding_code_fetch_config_proto",
     srcs = ["bidding_code_fetch_config.proto"],
     deps = [
-        "//services/common/blob_fetch:fetch_mode_proto",
         "@com_google_googleapis//google/api:annotations_proto",
         "@com_google_protobuf//:struct_proto",
     ],
@@ -244,11 +232,14 @@ cc_proto_library(
 cc_binary(
     name = "server",
     srcs = ["bidding_main.cc"],
+    defines = select({
+        "//:inference": ["PS_INFERENCE_NON_PROD=1"],
+        "//conditions:default": [],
+    }),
     linkopts = [
         "-Wl,-rpath,\\$$ORIGIN/../lib",
     ],
     local_defines = ENABLE_CORE_DUMPS_DEFINES,
-    malloc = "@com_google_tcmalloc//tcmalloc",
     visibility = ["//visibility:public"],
     deps = [
         ":bidding_code_fetch_config_cc_proto",
@@ -271,7 +262,6 @@ cc_binary(
         "//services/common/telemetry:configure_telemetry",
         "//services/common/util:file_util",
         "//services/common/util:request_response_constants",
-        "//services/common/util:tcmalloc_utils",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc++_reflection",  # for grpc_cli
         "@com_google_absl//absl/debugging:failure_signal_handler",
@@ -305,7 +295,6 @@ cc_test(
         "//services/bidding_service:generate_bids_reactor",
         "//services/bidding_service:generate_bids_reactor_test_utils",
         "//services/bidding_service/code_wrapper:buyer_code_wrapper",
-        "//services/common:feature_flags",
         "//services/common/constants:common_service_flags",
         "//services/common/encryption:key_fetcher_factory",
         "//services/common/encryption:mock_crypto_client_wrapper",
@@ -350,12 +339,4 @@ cc_library(
         "@google_privacysandbox_servers_common//src/util/status_macro:status_macros",
         "@service_value_key_fledge_privacysandbox//public/query/v2:get_values_v2_cc_proto",
     ],
-)
-
-pkg_files(
-    name = "packaged_cddl_specs",
-    srcs = ["//services/bidding_service/egress_cddl_spec:1.0.0"],
-    attributes = pkg_attributes(mode = "0555"),
-    prefix = "/egress_cddl_spec/",
-    visibility = ["//visibility:public"],
 )

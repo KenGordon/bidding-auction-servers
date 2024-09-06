@@ -46,18 +46,17 @@ TEST(HttpScoringSignalsAsyncProviderTest, IncludesClientTypeInRequest) {
               An<absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<
                                              GetSellerValuesOutput>>) &&>>(),
               An<absl::Duration>()))
-      .WillOnce(
-          [&notification, &test_client_type](
-              std::unique_ptr<GetSellerValuesInput> input,
-              const RequestMetadata& metadata,
-              absl::AnyInvocable<void(
-                  absl::StatusOr<std::unique_ptr<GetSellerValuesOutput>>)&&>
-                  callback,
-              absl::Duration timeout) {
-            EXPECT_EQ(input->client_type, test_client_type);
-            notification.Notify();
-            return absl::OkStatus();
-          });
+      .WillOnce([&notification, &test_client_type](
+                    std::unique_ptr<GetSellerValuesInput> input,
+                    const RequestMetadata& metadata,
+                    absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<
+                                                GetSellerValuesOutput>>) &&>
+                        callback,
+                    absl::Duration timeout) {
+        EXPECT_EQ(input->client_type, test_client_type);
+        notification.Notify();
+        return absl::OkStatus();
+      });
 
   HttpScoringSignalsAsyncProvider class_under_test(std::move(mock_client));
 
@@ -124,22 +123,20 @@ TEST(HttpScoringSignalsAsyncProviderTest, MapsAdKeysToSellerValuesInput) {
               An<absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<
                                              GetSellerValuesOutput>>) &&>>(),
               An<absl::Duration>()))
-      .WillOnce(
-          [&ad_render_urls, &ad_component_render_urls, &notification](
-              std::unique_ptr<GetSellerValuesInput> input,
-              const RequestMetadata& metadata,
-              absl::AnyInvocable<void(
-                  absl::StatusOr<std::unique_ptr<GetSellerValuesOutput>>)&&>
-                  callback,
-              absl::Duration timeout) {
-            // All ads from all responses were sent to KV client.
-            EXPECT_EQ(input->render_urls, ad_render_urls);
-            EXPECT_EQ(input->ad_component_render_urls,
-                      ad_component_render_urls);
-            EXPECT_EQ(input->seller_kv_experiment_group_id, kSellerEgId);
-            notification.Notify();
-            return absl::OkStatus();
-          });
+      .WillOnce([&ad_render_urls, &ad_component_render_urls, &notification](
+                    std::unique_ptr<GetSellerValuesInput> input,
+                    const RequestMetadata& metadata,
+                    absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<
+                                                GetSellerValuesOutput>>) &&>
+                        callback,
+                    absl::Duration timeout) {
+        // All ads from all responses were sent to KV client.
+        EXPECT_EQ(input->render_urls, ad_render_urls);
+        EXPECT_EQ(input->ad_component_render_urls, ad_component_render_urls);
+        EXPECT_EQ(input->seller_kv_experiment_group_id, kSellerEgId);
+        notification.Notify();
+        return absl::OkStatus();
+      });
 
   HttpScoringSignalsAsyncProvider class_under_test(std::move(mock_client));
 
@@ -169,8 +166,9 @@ TEST(HttpScoringSignalsAsyncProviderTest, MapsAsyncClientError) {
       .WillOnce(
           [](std::unique_ptr<GetSellerValuesInput> input,
              const RequestMetadata& metadata,
-             absl::AnyInvocable<void(
-                 absl::StatusOr<std::unique_ptr<GetSellerValuesOutput>>)&&>
+             absl::AnyInvocable<
+                 void(
+                     absl::StatusOr<std::unique_ptr<GetSellerValuesOutput>>) &&>
                  callback,
              absl::Duration timeout) {
             EXPECT_EQ(input->seller_kv_experiment_group_id, "");
@@ -208,19 +206,18 @@ TEST(HttpScoringSignalsAsyncProviderTest, MapsResponseToScoringSignals) {
               An<absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<
                                              GetSellerValuesOutput>>) &&>>(),
               An<absl::Duration>()))
-      .WillOnce(
-          [&expected_output](
-              std::unique_ptr<GetSellerValuesInput> input,
-              const RequestMetadata& metadata,
-              absl::AnyInvocable<void(
-                  absl::StatusOr<std::unique_ptr<GetSellerValuesOutput>>)&&>
-                  callback,
-              absl::Duration timeout) {
-            auto output = std::make_unique<GetSellerValuesOutput>();
-            output->result = expected_output;
-            (std::move(callback))(std::move(output));
-            return absl::OkStatus();
-          });
+      .WillOnce([&expected_output](
+                    std::unique_ptr<GetSellerValuesInput> input,
+                    const RequestMetadata& metadata,
+                    absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<
+                                                GetSellerValuesOutput>>) &&>
+                        callback,
+                    absl::Duration timeout) {
+        auto output = std::make_unique<GetSellerValuesOutput>();
+        output->result = expected_output;
+        (std::move(callback))(std::move(output));
+        return absl::OkStatus();
+      });
 
   HttpScoringSignalsAsyncProvider class_under_test(std::move(mock_client));
 

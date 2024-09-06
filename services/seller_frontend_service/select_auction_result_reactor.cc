@@ -72,16 +72,15 @@ void SelectAuctionResultReactor::ScoreAds(
   auto raw_request = CreateTopLevelScoreAdsRawRequest(
       request_->auction_config(), protected_auction_input_,
       component_auction_results);
-  PS_VLOG(kOriginated, log_context_) << "\nScoreAdsRawRequest:\n"
-                                     << raw_request->DebugString();
+  PS_VLOG(2, log_context_) << "\nScoreAdsRawRequest:\n"
+                           << raw_request->DebugString();
   auto auction_request_metric =
       metric::MakeInitiatedRequest(metric::kAs, metric_context_.get());
   auction_request_metric->SetRequestSize((int)raw_request->ByteSizeLong());
   auto on_scoring_done =
       [this, auction_request_metric = std::move(auction_request_metric)](
           absl::StatusOr<std::unique_ptr<ScoreAdsResponse::ScoreAdsRawResponse>>
-              result,
-          ResponseMetadata response_metadata) mutable {
+              result) mutable {
         {
           int response_size =
               result.ok() ? (int)result->get()->ByteSizeLong() : 0;
@@ -91,7 +90,6 @@ void SelectAuctionResultReactor::ScoreAds(
         }
         OnScoreAdsDone(std::move(result));
       };
-
   absl::Status execute_result = clients_.scoring.ExecuteInternal(
       std::move(raw_request), {}, std::move(on_scoring_done),
       absl::Milliseconds(
@@ -110,8 +108,7 @@ void SelectAuctionResultReactor::ScoreAds(
 void SelectAuctionResultReactor::OnScoreAdsDone(
     absl::StatusOr<std::unique_ptr<ScoreAdsResponse::ScoreAdsRawResponse>>
         response) {
-  PS_VLOG(kOriginated, log_context_)
-      << "ScoreAdsResponse status:" << response.status();
+  PS_VLOG(2, log_context_) << "ScoreAdsResponse status:" << response.status();
   auto scoring_return_status = server_common::FromAbslStatus(response.status());
   if (!response.ok()) {
     LogIfError(
@@ -185,7 +182,7 @@ void SelectAuctionResultReactor::FinishWithResponse(
 
 void SelectAuctionResultReactor::FinishWithClientVisibleErrors(
     absl::string_view message) {
-  PS_LOG(ERROR, log_context_)
+  PS_VLOG(2, log_context_)
       << "Finishing the SelectAdRequest RPC with client visible error: "
       << message;
   AuctionResult::Error auction_error;
@@ -198,7 +195,7 @@ void SelectAuctionResultReactor::FinishWithClientVisibleErrors(
 
 void SelectAuctionResultReactor::FinishWithServerVisibleErrors(
     absl::string_view message) {
-  PS_LOG(ERROR, log_context_)
+  PS_VLOG(2, log_context_)
       << "Finishing the SelectAdRequest RPC with ad server visible error";
   FinishWithStatus(
       grpc::Status(grpc::StatusCode::INVALID_ARGUMENT, message.data()));
@@ -232,7 +229,7 @@ void SelectAuctionResultReactor::Execute() {
       encapsulated_req, clients_.key_fetcher_manager_);
   // Could not decrypt PAI.
   if (!decrypt_req_status.ok()) {
-    PS_LOG(ERROR, log_context_)
+    PS_VLOG(1, log_context_)
         << "Error decrypting the protected "
         << (is_protected_auction_request_ ? "auction" : "audience")
         << " input ciphertext" << decrypt_req_status.status();
@@ -266,7 +263,7 @@ void SelectAuctionResultReactor::Execute() {
   // Validate PAI.
   request_generation_id_ = GetGenerationId(protected_auction_input_);
   if (request_generation_id_.empty()) {
-    PS_LOG(ERROR, log_context_) << kMissingGenerationId;
+    PS_VLOG(1, log_context_) << kMissingGenerationId;
     // Client side errors.
     FinishWithClientVisibleErrors(kMissingGenerationId);
     return;
@@ -283,7 +280,7 @@ void SelectAuctionResultReactor::Execute() {
   if (component_auction_results.empty()) {
     std::string error_msg = error_accumulator_.GetAccumulatedErrorString(
         ErrorVisibility::AD_SERVER_VISIBLE);
-    PS_LOG(ERROR, log_context_) << error_msg;
+    PS_VLOG(1, log_context_) << error_msg;
     FinishWithServerVisibleErrors(error_msg);
     return;
   }

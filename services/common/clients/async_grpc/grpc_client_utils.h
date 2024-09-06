@@ -30,12 +30,14 @@
 
 namespace privacy_sandbox::bidding_auction_servers {
 
-template <typename Request>
+template <typename RawRequest, typename Request>
 absl::StatusOr<std::pair<std::string, std::unique_ptr<Request>>>
 EncryptRequestWithHpke(
-    const std::string& plaintext, CryptoClientWrapperInterface& crypto_client,
+    std::unique_ptr<RawRequest> raw_request,
+    CryptoClientWrapperInterface& crypto_client,
     server_common::KeyFetcherManagerInterface& key_fetcher_manager,
     server_common::CloudPlatform cloud_platform) {
+  std::string plaintext = raw_request->SerializeAsString();
   PS_ASSIGN_OR_RETURN(HpkeMessage encrypted_request,
                       HpkeEncrypt(plaintext, crypto_client, key_fetcher_manager,
                                   cloud_platform));

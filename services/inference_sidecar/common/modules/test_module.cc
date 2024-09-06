@@ -30,8 +30,6 @@
 #include "proto/inference_sidecar.pb.h"
 #include "sandboxed_api/util/runfiles.h"
 
-#include "test_constants.h"
-
 namespace privacy_sandbox::bidding_auction_servers::inference {
 
 TestModule::~TestModule() {
@@ -44,9 +42,7 @@ TestModule::~TestModule() {
 }
 
 absl::StatusOr<PredictResponse> TestModule::Predict(
-    const PredictRequest& request, const RequestContext& request_context) {
-  // For testing consented debugging.
-  INFERENCE_LOG(INFO, request_context) << kConsentedLogMsg;
+    const PredictRequest& request) {
   // Returns a placeholder value.
   PredictResponse response;
   response.set_output("0.57721");
@@ -79,17 +75,8 @@ absl::StatusOr<RegisterModelResponse> TestModule::RegisterModel(
   return response;
 }
 
-void TestModule::ResetModels() {
-  if (config_.model_reset_probability() == 0.0) {
-    ABSL_LOG(INFO) << "Model reset is disabled.";
-  }
+std::unique_ptr<ModuleInterface> ModuleInterface::Create() {
+  return std::make_unique<TestModule>();
 }
-
-std::unique_ptr<ModuleInterface> ModuleInterface::Create(
-    const InferenceSidecarRuntimeConfig& config) {
-  return std::make_unique<TestModule>(config);
-}
-
-absl::string_view ModuleInterface::GetModuleVersion() { return "test"; }
 
 }  // namespace privacy_sandbox::bidding_auction_servers::inference

@@ -52,14 +52,17 @@ using ::google::cmrt::sdk::public_key_service::v1::PublicKey;
 
 namespace {
 
-absl::Status HandleCryptoOperationResult(const absl::Status& status,
+absl::Status HandleCryptoOperationResult(const ExecutionResult& result,
                                          bool operation_successful,
                                          const std::string& operation) {
-  if (!status.ok() || !operation_successful) {
-    // Only log the status; don't log the callback failure twice.
-    if (!status.ok()) {
-      ABSL_LOG(ERROR) << absl::StrFormat(kCryptoOperationFailureError,
-                                         operation.data(), status.message());
+  if (!result.Successful() || !operation_successful) {
+    // Only log the execution result error; don't log the callback failure
+    // twice.
+    if (!result.Successful()) {
+      const std::string error =
+          absl::StrFormat(kCryptoOperationFailureError, operation.data(),
+                          GetErrorMessage(result.status_code));
+      ABSL_LOG(ERROR) << error;
     }
 
     return absl::Status(absl::StatusCode::kInternal,
@@ -74,13 +77,11 @@ absl::Status HandleCryptoOperationResult(const absl::Status& status,
 CryptoClientWrapper::CryptoClientWrapper(
     std::unique_ptr<google::scp::cpio::CryptoClientInterface> crypto_client)
     : crypto_client_(std::move(crypto_client)) {
-  crypto_client_->Init().IgnoreError();
-  crypto_client_->Run().IgnoreError();
+  crypto_client_->Init();
+  crypto_client_->Run();
 }
 
-CryptoClientWrapper::~CryptoClientWrapper() {
-  crypto_client_->Stop().IgnoreError();
-}
+CryptoClientWrapper::~CryptoClientWrapper() { crypto_client_->Stop(); }
 
 absl::StatusOr<HpkeEncryptResponse> CryptoClientWrapper::HpkeEncrypt(
     const PublicKey& key, const std::string& plaintext_payload) noexcept {
@@ -99,7 +100,7 @@ absl::StatusOr<HpkeEncryptResponse> CryptoClientWrapper::HpkeEncrypt(
   HpkeEncryptResponse response;
   bool success = false;
   // HpkeEncrypt() callback is executed synchronously.
-  absl::Status status = crypto_client_->HpkeEncrypt(
+  ExecutionResult execution_result = crypto_client_->HpkeEncrypt(
       std::move(request),
       [&response, &success](
           const google::scp::core::ExecutionResult& result,
@@ -116,7 +117,7 @@ absl::StatusOr<HpkeEncryptResponse> CryptoClientWrapper::HpkeEncrypt(
       });
 
   PS_RETURN_IF_ERROR(
-      HandleCryptoOperationResult(status, success, kHpkeEncrypt));
+      HandleCryptoOperationResult(execution_result, success, kHpkeEncrypt));
   return response;
 }
 
@@ -130,7 +131,7 @@ absl::StatusOr<AeadEncryptResponse> CryptoClientWrapper::AeadEncrypt(
   AeadEncryptResponse response;
   bool success = false;
   // AeadEncrypt() callback is executed synchronously.
-  absl::Status status = crypto_client_->AeadEncrypt(
+  ExecutionResult execution_result = crypto_client_->AeadEncrypt(
       std::move(request),
       [&response, &success](const google::scp::core::ExecutionResult& result,
                             AeadEncryptResponse encrypt_response) {
@@ -145,7 +146,7 @@ absl::StatusOr<AeadEncryptResponse> CryptoClientWrapper::AeadEncrypt(
       });
 
   PS_RETURN_IF_ERROR(
-      HandleCryptoOperationResult(status, success, kAeadEncrypt));
+      HandleCryptoOperationResult(execution_result, success, kAeadEncrypt));
   return response;
 }
 
@@ -183,7 +184,7 @@ absl::StatusOr<HpkeDecryptResponse> CryptoClientWrapper::HpkeDecrypt(
   HpkeDecryptResponse response;
   bool success = false;
   // HpkeDecrypt() callback is executed synchronously.
-  absl::Status status = crypto_client_->HpkeDecrypt(
+  ExecutionResult execution_result = crypto_client_->HpkeDecrypt(
       std::move(request),
       [&response, &success](
           const google::scp::core::ExecutionResult& result,
@@ -200,7 +201,7 @@ absl::StatusOr<HpkeDecryptResponse> CryptoClientWrapper::HpkeDecrypt(
       });
 
   PS_RETURN_IF_ERROR(
-      HandleCryptoOperationResult(status, success, kHpkeDecrypt));
+      HandleCryptoOperationResult(execution_result, success, kHpkeDecrypt));
   return response;
 }
 
@@ -214,7 +215,7 @@ absl::StatusOr<AeadDecryptResponse> CryptoClientWrapper::AeadDecrypt(
   AeadDecryptResponse response;
   bool success = false;
   // AeadDecrypt() callback is executed synchronously.
-  absl::Status status = crypto_client_->AeadDecrypt(
+  ExecutionResult execution_result = crypto_client_->AeadDecrypt(
       std::move(request),
       [&response, &success](const google::scp::core::ExecutionResult& result,
                             AeadDecryptResponse decrypt_response) {
@@ -229,7 +230,7 @@ absl::StatusOr<AeadDecryptResponse> CryptoClientWrapper::AeadDecrypt(
       });
 
   PS_RETURN_IF_ERROR(
-      HandleCryptoOperationResult(status, success, kAeadDecrypt));
+      HandleCryptoOperationResult(execution_result, success, kAeadDecrypt));
   return response;
 }
 

@@ -49,7 +49,6 @@ declare -i SKIP_PRECOMMIT=0
 declare -i NO_TESTS=0
 declare -i NO_PLATFORM_BUILD=0
 declare -a AMI_REGIONS
-declare AWS_IMAGE_TAG
 declare GCP_IMAGE_TAG
 declare GCP_IMAGE_REPO
 declare -i GCP_SKIP_IMAGE_UPLOAD=0
@@ -71,7 +70,7 @@ usage:
   $0 <options>
     --service-path               [REQUIRED] Recognized values: auction_service, bidding_service, buyer_frontend_service, seller_frontend_service.
                                    Use multiple times to specify more than one service.
-    --instance                   [REQUIRED] Recognized values: local, gcp, aws, azure
+    --instance                   [REQUIRED] Recognized values: local, aws
     --platform                   [REQUIRED] Recognized values: gcp, aws, azure
     --e2e                        Run e2e mode
     --build-flavor               Recognized values: prod, non_prod, inference_non_prod. Default: prod
@@ -80,13 +79,10 @@ usage:
     --no-precommit               Skip precommit checks
     --no-tests                   Skip tests
     --no-platform-build          Skip platform-specific building and testing
-    --verbose                    Enable verbose output
-
-If platform is aws:
     --with-ami                   AMI region in which to build and store AWS AMIs.
                                    Use multiple times to specify more than one region.
                                    If empty or not specified, none will be built.
-    --aws-image-tag              Custom image tag for AMI image. Applied to AMI as tag value for key 'build_env'.
+    --verbose                    Enable verbose output
 
 If platform is gcp:
     --gcp-skip-image-upload       Skip GCP image upload (and sha256 recording).
@@ -142,10 +138,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --with-ami)
       AMI_REGIONS+=("$2")
-      shift 2 || usage
-      ;;
-    --aws-image-tag)
-      AWS_IMAGE_TAG+=("$2")
       shift 2 || usage
       ;;
     --service-path)
@@ -300,18 +292,19 @@ function invoke_targets() {
   "
 }
 
-function build_services_for_aws() {
-  declare -n services="$1"
+function build_service_for_aws() {
+  declare -r service="$1"
   declare -n extra_args="$2"
-
-  declare -a service_flags=()
-  for service in "${services[@]}"; do
-    service_flags+=("--service" "$service")
-  done
-
-  # Call build_and_test with service and image flags
+  # note: use relative path to dist
+  declare -r docker_image=dist/debian/${service}_image.tar
+  if ! [[ -s ${WORKSPACE}/${docker_image} ]]; then
+    printf "Error: docker image tar file not found: %s\n" "${docker_image}" &>/dev/stderr
+    exit 1
+  fi
+  # shellcheck disable=SC2086
   "${SCRIPT_DIR}"/aws/build_and_test ${VERBOSE_ARG} \
-    ${service_flags[@]} \
+    --server-image "${docker_image}" \
+    --service-path "${service}" \
     --build-flavor ${BUILD_FLAVOR} \
     "${extra_args[@]}"
 }
@@ -378,13 +371,13 @@ if [[ ${NO_PLATFORM_BUILD} -eq 0 ]]; then
       for region in "${AMI_REGIONS[@]}"; do
         EXTRA_ARGS+=(--with-ami "${region}")
       done
-      if [[ -n "${AWS_IMAGE_TAG}" ]]; then
-        EXTRA_ARGS+=(--aws-image-tag ${AWS_IMAGE_TAG})
-      fi
       if [[ ${VERBOSE} -eq 1 ]]; then
         EXTRA_ARGS+=("--verbose")
       fi
-      build_services_for_aws SERVICES EXTRA_ARGS
+
+      for svc in "${SERVICES[@]}"; do
+        build_service_for_aws "${svc}" EXTRA_ARGS
+      done
       ;;
     gcp)
       source  "${SCRIPT_DIR}"/gcp/lib_gcp_artifacts.sh

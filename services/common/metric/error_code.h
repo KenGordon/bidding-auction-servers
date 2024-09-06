@@ -25,9 +25,6 @@ inline constexpr absl::string_view kAuctionScoreAdsDispatchResponseError =
     "ScoreAds dispatch response error";
 inline constexpr absl::string_view kAuctionScoreAdsFailedToDispatchCode =
     "ScoreAds failed to dispatch code";
-inline constexpr absl::string_view
-    kAuctionScoreAdsFailedToInsertDispatchRequest =
-        "ScoreAds failed to create dispatch code";
 inline constexpr absl::string_view kAuctionScoreAdsNoAdSelected =
     "ScoreAds no ad selected";
 

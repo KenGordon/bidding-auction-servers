@@ -76,11 +76,10 @@ absl::Status TrustedServersConfigClient::Init(
     GetParameterRequest get_parameter_request;
     get_parameter_request.set_parameter_name(
         absl::StrCat(config_param_prefix, key));
-
     // Callbacks occur synchronously.
     // The GetParameter() call returns success given a valid request object
     // (e.g. a non-empty parameter name).
-    absl::Status status = config_client_->GetParameter(
+    ExecutionResult result = config_client_->GetParameter(
         std::move(get_parameter_request),
         [this, &key = key, &initial_value = value, &counter](
             const ExecutionResult& result,
@@ -97,12 +96,11 @@ absl::Status TrustedServersConfigClient::Init(
           }
           counter.DecrementCount();
         });
-
     // Throw an error if key value not set before this and not found in
     // parameter store.
-    if (!status.ok() && value == kEmptyValue) {
-      return HandleFailure(
-          absl::StrFormat(error_message, key, status.message()));
+    if (!result.Successful() && value == kEmptyValue) {
+      return HandleFailure(absl::StrFormat(
+          error_message, key, GetErrorMessage(result.status_code)));
     }
   }
 
@@ -138,17 +136,21 @@ int TrustedServersConfigClient::GetIntParameter(
   return std::stoi(config_entries_map_.at(name));
 }
 
-int64_t TrustedServersConfigClient::GetInt64Parameter(
-    absl::string_view name) const noexcept {
-  DCHECK(HasParameter(name)) << "Flag " << name << " not found";
-  return std::stol(config_entries_map_.at(name));
-}
-
 absl::Status TrustedServersConfigClient::InitAndRunConfigClient() noexcept {
-  PS_RETURN_IF_ERROR(config_client_->Init()).SetPrepend()
-      << "Cannot init config client: ";
-  PS_RETURN_IF_ERROR(config_client_->Run()).SetPrepend()
-      << "Cannot run config client";
+  ExecutionResult result = config_client_->Init();
+  if (!result.Successful()) {
+    return absl::UnavailableError(
+        absl::StrFormat("Cannot init config client (status_code: %s)\n",
+                        GetErrorMessage(result.status_code)));
+  }
+
+  result = config_client_->Run();
+  if (!result.Successful()) {
+    return absl::UnavailableError(
+        absl::StrFormat("Cannot run config client (status_code: %s)\n",
+                        GetErrorMessage(result.status_code)));
+  }
+
   return absl::OkStatus();
 }
 

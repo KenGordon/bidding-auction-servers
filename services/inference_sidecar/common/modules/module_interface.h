@@ -21,7 +21,6 @@
 
 #include "absl/status/statusor.h"
 #include "proto/inference_sidecar.pb.h"
-#include "utils/log.h"
 
 namespace privacy_sandbox::bidding_auction_servers::inference {
 
@@ -30,20 +29,15 @@ class ModuleInterface {
   // Different implementations of ModuleInterface return specialized modules,
   // for example, Tensorflow module and PyTorch module. These specialized
   // modules can only be called with the methods defined by this interface.
-  static std::unique_ptr<ModuleInterface> Create(
-      const InferenceSidecarRuntimeConfig& config);
-  // Gets inference backend module version.
-  static absl::string_view GetModuleVersion();
+  static std::unique_ptr<ModuleInterface> Create();
   virtual ~ModuleInterface() = default;
+
   // Executes inference on a registered ML model.
   virtual absl::StatusOr<PredictResponse> Predict(
-      const PredictRequest& request,
-      const RequestContext& request_context = RequestContext()) = 0;
+      const PredictRequest& request) = 0;
   // Registers a new model.
   virtual absl::StatusOr<RegisterModelResponse> RegisterModel(
       const RegisterModelRequest& request) = 0;
-  // Resets models.
-  virtual void ResetModels() = 0;
 };
 
 }  // namespace privacy_sandbox::bidding_auction_servers::inference

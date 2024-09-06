@@ -23,6 +23,12 @@
 
 namespace privacy_sandbox::bidding_auction_servers {
 
+constexpr char kFeatureLogging[] = "enable_logging";
+constexpr char kFeatureDebugUrlGeneration[] = "enable_debug_url_generation";
+
+constexpr char kFeatureDisabled[] = "false";
+constexpr char kFeatureEnabled[] = "true";
+
 // Returns the complete wrapped code for Buyer.
 // The function adds wrappers to the Buyer provided generateBid function.
 // This enables:
@@ -44,12 +50,17 @@ std::string GetProtectedAppSignalsGenericBuyerWrappedCode(
     absl::string_view ad_tech_js, absl::string_view ad_tech_wasm,
     absl::string_view function_name, absl::string_view args);
 
+// Returns a JSON string for feature flags to be used by the wrapper script.
+std::string GetFeatureFlagJson(bool enable_logging = true,
+                               bool enable_debug_url_generation = false);
+
 // Wrapper Javascript over AdTech code.
 // This wrapper supports the features below:
 //- Exporting logs to Bidding Service using console.log
 //- Hooks in wasm module
 inline constexpr absl::string_view kEntryFunction = R"JS_CODE(
-    async function generateBidEntryFunction($0, featureFlags){
+    function generateBidEntryFunction($0, featureFlags){
+      $1
       var ps_logs = [];
       var ps_errors = [];
       var ps_warns = [];
@@ -64,7 +75,7 @@ inline constexpr absl::string_view kEntryFunction = R"JS_CODE(
           ps_warns.push(JSON.stringify(args))
         }
       }
-      $1
+
       var forDebuggingOnly_auction_loss_url = undefined;
       var forDebuggingOnly_auction_win_url = undefined;
       const forDebuggingOnly = {};
@@ -78,7 +89,7 @@ inline constexpr absl::string_view kEntryFunction = R"JS_CODE(
 
       var generateBidResponse = {};
       try {
-        generateBidResponse = await generateBid($0);
+        generateBidResponse = generateBid($0);
       if( featureFlags.enable_debug_url_generation &&
              (forDebuggingOnly_auction_loss_url
                   || forDebuggingOnly_auction_win_url)) {
@@ -92,16 +103,12 @@ inline constexpr absl::string_view kEntryFunction = R"JS_CODE(
           console.error("[Error: " + error + "; Message: " + message + "]");
         }
       }
-      var result = generateBidResponse !== undefined ? generateBidResponse : {};
-      if (featureFlags.enable_logging) {
-        return {
-          response: result,
-          logs: ps_logs,
-          errors: ps_errors,
-          warnings: ps_warns
-        };
+      return {
+        response: generateBidResponse !== undefined ? generateBidResponse : {},
+        logs: ps_logs,
+        errors: ps_errors,
+        warnings: ps_warns
       }
-      return result;
     }
 )JS_CODE";
 
@@ -111,7 +118,7 @@ inline constexpr absl::string_view kEntryFunction = R"JS_CODE(
 //- Hooks in wasm module
 inline constexpr absl::string_view kPrepareDataForAdRetrievalEntryFunction =
     R"JS_CODE(
-    async function $0EntryFunction(onDeviceEncodedSignalsHexString, $1, featureFlags){
+    function $0EntryFunction(onDeviceEncodedSignalsHexString, $1, featureFlags){
       var ps_logs = [];
       var ps_errors = [];
       var ps_warns = [];
@@ -131,7 +138,7 @@ inline constexpr absl::string_view kPrepareDataForAdRetrievalEntryFunction =
           Uint8Array.from(encodedOnDeviceSignalsIn.match(/.{1,2}/g).map((byte) =>
             parseInt(byte, 16)));
       return {
-        response: await $0(convertToUint8Array(onDeviceEncodedSignalsHexString), $1),
+        response: $0(convertToUint8Array(onDeviceEncodedSignalsHexString), $1),
         logs: ps_logs,
         errors: ps_errors,
         warnings: ps_warns

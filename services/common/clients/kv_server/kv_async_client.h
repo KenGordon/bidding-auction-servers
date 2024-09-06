@@ -74,11 +74,9 @@ class KVAsyncGrpcClient
       std::unique_ptr<GetValuesRequest> raw_request,
       const RequestMetadata& metadata,
       absl::AnyInvocable<
-          void(absl::StatusOr<std::unique_ptr<GetValuesResponse>>,
-               ResponseMetadata) &&>
+          void(absl::StatusOr<std::unique_ptr<GetValuesResponse>>) &&>
           on_done,
-      absl::Duration timeout = kMaxTimeout,
-      RequestConfig request_config = {}) override;
+      absl::Duration timeout = kMaxTimeout) const override;
 
  protected:
   void SendRpc(ObliviousHttpRequestUptr oblivious_http_context,

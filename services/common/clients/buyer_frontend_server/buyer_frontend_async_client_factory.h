@@ -17,7 +17,6 @@
 
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
@@ -47,9 +46,10 @@ class BuyerFrontEndAsyncClientFactory
       const BuyerServiceClientConfig& client_config);
 
   // BuyerFrontEndAsyncClientFactory is neither copyable nor movable.
-  BuyerFrontEndAsyncClientFactory(BuyerFrontEndAsyncClientFactory&) = delete;
-  BuyerFrontEndAsyncClientFactory& operator=(BuyerFrontEndAsyncClientFactory&) =
+  BuyerFrontEndAsyncClientFactory(const BuyerFrontEndAsyncClientFactory&) =
       delete;
+  BuyerFrontEndAsyncClientFactory& operator=(
+      const BuyerFrontEndAsyncClientFactory&) = delete;
 
   // Provides a shared pointer to the BuyerFrontEndAsyncClient for the BFE
   // operated by the buyer specified via ig_owner, IF AND ONLY IF that client
@@ -57,23 +57,13 @@ class BuyerFrontEndAsyncClientFactory
   // Else returns nullptr.
   // Shared pointer is used so that the lifetime of the client is independent
   // of the lifetime of this factory or cache in this factory.
-  std::shared_ptr<BuyerFrontEndAsyncClient> Get(
+  std::shared_ptr<const BuyerFrontEndAsyncClient> Get(
       absl::string_view ig_owner) const override;
 
-  // Returns a list of all <buyer_domain, bfe_client> pairs contained by the
-  // factory.
-  std::vector<
-      std::pair<absl::string_view, std::shared_ptr<BuyerFrontEndAsyncClient>>>
-  Entries() const override;
-
  private:
-  std::unique_ptr<absl::flat_hash_map<
-      std::string, std::shared_ptr<BuyerFrontEndAsyncClient>>>
+  std::unique_ptr<
+      LocalCache<std::string, std::shared_ptr<const BuyerFrontEndAsyncClient>>>
       client_cache_;
-
-  std::vector<
-      std::pair<absl::string_view, std::shared_ptr<BuyerFrontEndAsyncClient>>>
-      entries_;
 };
 
 }  // namespace privacy_sandbox::bidding_auction_servers

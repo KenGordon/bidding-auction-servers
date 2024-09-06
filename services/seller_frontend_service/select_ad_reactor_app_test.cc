@@ -32,7 +32,6 @@
 #include "quiche/oblivious_http/oblivious_http_client.h"
 #include "quiche/oblivious_http/oblivious_http_gateway.h"
 #include "services/common/compression/gzip.h"
-#include "services/common/feature_flags.h"
 #include "services/common/metric/server_definition.h"
 #include "services/common/test/mocks.h"
 #include "services/common/test/random.h"
@@ -56,20 +55,18 @@ using ::testing::HasSubstr;
 using ::testing::Return;
 using EncodedBueryInputs = ::google::protobuf::Map<std::string, std::string>;
 using DecodedBueryInputs = ::google::protobuf::Map<std::string, BuyerInput>;
-using GetBidDoneCallback = absl::AnyInvocable<
-    void(absl::StatusOr<std::unique_ptr<GetBidsResponse::GetBidsRawResponse>>,
-         ResponseMetadata response_metadata) &&>;
-using ScoreAdsDoneCallback = absl::AnyInvocable<
-    void(absl::StatusOr<std::unique_ptr<ScoreAdsResponse::ScoreAdsRawResponse>>,
-         ResponseMetadata response_metadata) &&>;
+using GetBidDoneCallback =
+    absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<
+                                GetBidsResponse::GetBidsRawResponse>>) &&>;
+using ScoreAdsDoneCallback =
+    absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<
+                                ScoreAdsResponse::ScoreAdsRawResponse>>) &&>;
 
 inline constexpr int kTestBidValue = 10.0;
 inline constexpr int kTestAdCost = 2.0;
 inline constexpr int kTestEncodingVersion = 1;
 inline constexpr int kTestModelingSignals = 3;
-inline constexpr char kTestEgressPayload[] = "TestegressPayload";
-inline constexpr char kTestTemporaryEgressPayload[] =
-    "TestTemporaryEgressPayload";
+inline constexpr char kTestEgressFeature[] = "TestEgressFeatures";
 inline constexpr char kTestRender[] = "https://test-render.com";
 inline constexpr char kAdRenderUrls[] = "AdRenderUrls";
 inline constexpr char kTestMetadataKey[] = "TestMetadataKey";
@@ -87,7 +84,6 @@ class SelectAdReactorForAppTest : public ::testing::Test {
     config_.SetFlagForTest("", CONSENTED_DEBUG_TOKEN);
     config_.SetFlagForTest(kFalse, ENABLE_PROTECTED_APP_SIGNALS);
     config_.SetFlagForTest(kTrue, ENABLE_PROTECTED_AUDIENCE);
-    absl::SetFlag(&FLAGS_enable_chaffing, false);
   }
 
   TrustedServersConfigClient config_ = CreateConfig();
@@ -113,9 +109,6 @@ TYPED_TEST(SelectAdReactorForAppTest, VerifyEncoding) {
           CLIENT_TYPE_ANDROID, kNonZeroBidValue, scoring_signals_provider,
           scoring_client, buyer_front_end_async_client_factory_mock,
           key_fetcher_manager.get(), expected_buyer_bids, kSellerOriginDomain);
-  MockEntriesCallOnBuyerFactory(
-      request_with_context.protected_auction_input.buyer_input(),
-      buyer_front_end_async_client_factory_mock);
 
   SelectAdResponse encrypted_response =
       RunReactorRequest<SelectAdReactorForApp>(
@@ -194,10 +187,6 @@ TYPED_TEST(SelectAdReactorForAppTest, VerifyEncodingWithReportingUrls) {
           key_fetcher_manager.get(), expected_buyer_bids, kSellerOriginDomain,
           expect_all_buyers_solicited, top_level_seller, enable_reporting);
 
-  MockEntriesCallOnBuyerFactory(
-      request_with_context.protected_auction_input.buyer_input(),
-      buyer_front_end_async_client_factory_mock);
-
   SelectAdResponse encrypted_response =
       RunReactorRequest<SelectAdReactorForApp>(
           this->config_, clients, request_with_context.select_ad_request);
@@ -215,6 +204,7 @@ TYPED_TEST(SelectAdReactorForAppTest, VerifyEncodingWithReportingUrls) {
   EXPECT_EQ(payload_size, 1 << log_2_payload);
   EXPECT_GE(payload_size, kMinAuctionResultBytes);
 
+  // Unframe the framed response.
   // Unframe the framed response.
   absl::StatusOr<server_common::DecodedRequest> unframed_response =
       server_common::DecodeRequestPayload(*decrypted_response);
@@ -288,10 +278,6 @@ TYPED_TEST(SelectAdReactorForAppTest, VerifyEncodingForServerComponentAuction) {
           {&crypto_client,
            EncryptionCloudPlatform::ENCRYPTION_CLOUD_PLATFORM_GCP});
 
-  MockEntriesCallOnBuyerFactory(
-      request_with_context.protected_auction_input.buyer_input(),
-      buyer_front_end_async_client_factory_mock);
-
   SelectAdResponse encrypted_response =
       RunReactorRequest<SelectAdReactorForApp>(
           this->config_, clients, request_with_context.select_ad_request);
@@ -345,9 +331,6 @@ TYPED_TEST(SelectAdReactorForAppTest, VerifyChaffedResponse) {
           CLIENT_TYPE_ANDROID, kZeroBidValue, scoring_signals_provider,
           scoring_client, buyer_front_end_async_client_factory_mock,
           key_fetcher_manager.get(), expected_buyer_bids, kSellerOriginDomain);
-  MockEntriesCallOnBuyerFactory(
-      request_with_context.protected_auction_input.buyer_input(),
-      buyer_front_end_async_client_factory_mock);
 
   SelectAdResponse encrypted_response =
       RunReactorRequest<SelectAdReactorForApp>(
@@ -460,7 +443,6 @@ class SelectAdReactorPASTest : public ::testing::Test {
     config_.SetFlagForTest("", CONSENTED_DEBUG_TOKEN);
     config_.SetFlagForTest(kTrue, ENABLE_PROTECTED_APP_SIGNALS);
     config_.SetFlagForTest(kTrue, ENABLE_PROTECTED_AUDIENCE);
-    absl::SetFlag(&FLAGS_enable_chaffing, false);
 
     EXPECT_CALL(*key_fetcher_manager_, GetPrivateKey)
         .WillRepeatedly(Return(GetPrivateKey()));
@@ -493,8 +475,7 @@ class SelectAdReactorPASTest : public ::testing::Test {
     result.set_render(kTestRender);
     result.set_modeling_signals(kTestModelingSignals);
     result.set_ad_cost(kTestAdCost);
-    result.set_egress_payload(kTestEgressPayload);
-    result.set_temporary_unlimited_egress_payload(kTestTemporaryEgressPayload);
+    result.set_egress_features(kTestEgressFeature);
     return result;
   }
 
@@ -615,8 +596,7 @@ TEST_F(SelectAdReactorPASTest, PASBuyerInputIsPopulatedForGetBids) {
                                   get_bids_raw_request,
                               const RequestMetadata& metadata,
                               GetBidDoneCallback on_done,
-                              absl::Duration timeout,
-                              RequestConfig request_config) {
+                              absl::Duration timeout) {
     // Expect PAS buyer inputs to be populated correctly in GetBids.
     EXPECT_TRUE(get_bids_raw_request->has_protected_app_signals_buyer_input());
     EXPECT_TRUE(get_bids_raw_request->protected_app_signals_buyer_input()
@@ -634,7 +614,8 @@ TEST_F(SelectAdReactorPASTest, PASBuyerInputIsPopulatedForGetBids) {
   };
   auto setup_mock_buyer =
       [&mock_get_bids](std::unique_ptr<BuyerFrontEndAsyncClientMock> buyer) {
-        EXPECT_CALL(*buyer, ExecuteInternal).WillRepeatedly(mock_get_bids);
+        EXPECT_CALL(*buyer, ExecuteInternal(_, _, _, _))
+            .WillRepeatedly(mock_get_bids);
         return buyer;
       };
   auto MockBuyerFactoryCall = [setup_mock_buyer](absl::string_view hostname) {
@@ -654,9 +635,8 @@ TEST_F(SelectAdReactorPASTest, PASBuyerInputIsClearedIfFeatureNotAvailable) {
   auto mock_get_bids = [](std::unique_ptr<GetBidsRequest::GetBidsRawRequest>
                               get_bids_raw_request,
                           const RequestMetadata& metadata,
-                          GetBidDoneCallback on_done, absl::Duration timeout,
-                          RequestConfig request_config) {
-    // Expect PAS buyer inputs to be populated correctly in GetBids.
+                          GetBidDoneCallback on_done, absl::Duration timeout) {
+    // Expect PAS buyer inputs to be not present in GetBids.
     EXPECT_FALSE(get_bids_raw_request->has_protected_app_signals_buyer_input());
 
     // Ensure PA buyer inputs doesn't have the PAS data.
@@ -666,7 +646,8 @@ TEST_F(SelectAdReactorPASTest, PASBuyerInputIsClearedIfFeatureNotAvailable) {
   };
   auto setup_mock_buyer =
       [&mock_get_bids](std::unique_ptr<BuyerFrontEndAsyncClientMock> buyer) {
-        EXPECT_CALL(*buyer, ExecuteInternal).WillRepeatedly(mock_get_bids);
+        EXPECT_CALL(*buyer, ExecuteInternal(_, _, _, _))
+            .WillRepeatedly(mock_get_bids);
         return buyer;
       };
   auto MockBuyerFactoryCall = [setup_mock_buyer](absl::string_view hostname) {
@@ -691,16 +672,16 @@ TEST_F(SelectAdReactorPASTest, PASAdWithBidIsSentForScoring) {
                                   get_bids_raw_request,
                               const RequestMetadata& metadata,
                               GetBidDoneCallback on_done,
-                              absl::Duration timeout,
-                              RequestConfig request_config) {
+                              absl::Duration timeout) {
     auto response = std::make_unique<GetBidsResponse::GetBidsRawResponse>();
     response->mutable_protected_app_signals_bids()->Add(GetTestPASAdWithBid());
-    std::move(on_done)(std::move(response), /* response_metadata= */ {});
+    std::move(on_done)(std::move(response));
     return absl::OkStatus();
   };
   auto setup_mock_buyer =
       [&mock_get_bids](std::unique_ptr<BuyerFrontEndAsyncClientMock> buyer) {
-        EXPECT_CALL(*buyer, ExecuteInternal).WillRepeatedly(mock_get_bids);
+        EXPECT_CALL(*buyer, ExecuteInternal(_, _, _, _))
+            .WillRepeatedly(mock_get_bids);
         return buyer;
       };
   auto MockBuyerFactoryCall = [setup_mock_buyer](absl::string_view hostname) {
@@ -708,16 +689,13 @@ TEST_F(SelectAdReactorPASTest, PASAdWithBidIsSentForScoring) {
   };
   EXPECT_CALL(buyer_front_end_async_client_factory_mock_, Get(_))
       .WillRepeatedly(MockBuyerFactoryCall);
-  MockEntriesCallOnBuyerFactory(
-      request_with_context.protected_auction_input.buyer_input(),
-      buyer_front_end_async_client_factory_mock_);
 
   EXPECT_CALL(scoring_client_, ExecuteInternal)
       .WillOnce(
           [this, &select_ad_req, &protected_auction_input](
               std::unique_ptr<ScoreAdsRequest::ScoreAdsRawRequest> request,
               const RequestMetadata& metadata, ScoreAdsDoneCallback on_done,
-              absl::Duration timeout, RequestConfig request_config) {
+              absl::Duration timeout) {
             EXPECT_EQ(request->publisher_hostname(),
                       protected_auction_input.publisher_name());
             EXPECT_EQ(request->seller_signals(),
@@ -737,8 +715,8 @@ TEST_F(SelectAdReactorPASTest, PASAdWithBidIsSentForScoring) {
                       expected_bid.modeling_signals());
             EXPECT_EQ(observed_bid_with_metadata.ad_cost(),
                       expected_bid.ad_cost());
-            EXPECT_EQ(observed_bid_with_metadata.egress_payload(),
-                      expected_bid.egress_payload());
+            EXPECT_EQ(observed_bid_with_metadata.egress_features(),
+                      expected_bid.egress_features());
             EXPECT_EQ(observed_bid_with_metadata.owner(), kSampleBuyer);
             EXPECT_TRUE(MessageDifferencer::Equals(
                 observed_bid_with_metadata.ad(), expected_bid.ad()));
@@ -769,16 +747,16 @@ TEST_F(SelectAdReactorPASTest,
                                   get_bids_raw_request,
                               const RequestMetadata& metadata,
                               GetBidDoneCallback on_done,
-                              absl::Duration timeout,
-                              RequestConfig request_config) {
+                              absl::Duration timeout) {
     auto response = std::make_unique<GetBidsResponse::GetBidsRawResponse>();
     response->mutable_protected_app_signals_bids()->Add(GetTestPASAdWithBid());
-    std::move(on_done)(std::move(response), /* response_metadata= */ {});
+    std::move(on_done)(std::move(response));
     return absl::OkStatus();
   };
   auto setup_mock_buyer =
       [&mock_get_bids](std::unique_ptr<BuyerFrontEndAsyncClientMock> buyer) {
-        EXPECT_CALL(*buyer, ExecuteInternal).WillRepeatedly(mock_get_bids);
+        EXPECT_CALL(*buyer, ExecuteInternal(_, _, _, _))
+            .WillRepeatedly(mock_get_bids);
         return buyer;
       };
   auto MockBuyerFactoryCall = [setup_mock_buyer](absl::string_view hostname) {
@@ -804,8 +782,7 @@ TEST_F(SelectAdReactorPASTest, PASOnlyBuyerInputIsAllowed) {
                                   get_bids_raw_request,
                               const RequestMetadata& metadata,
                               GetBidDoneCallback on_done,
-                              absl::Duration timeout,
-                              RequestConfig request_config) {
+                              absl::Duration timeout) {
     // Expect PAS buyer inputs to be populated correctly in GetBids.
     EXPECT_TRUE(get_bids_raw_request->has_protected_app_signals_buyer_input());
     EXPECT_TRUE(get_bids_raw_request->protected_app_signals_buyer_input()
@@ -823,7 +800,8 @@ TEST_F(SelectAdReactorPASTest, PASOnlyBuyerInputIsAllowed) {
   };
   auto setup_mock_buyer =
       [&mock_get_bids](std::unique_ptr<BuyerFrontEndAsyncClientMock> buyer) {
-        EXPECT_CALL(*buyer, ExecuteInternal).WillRepeatedly(mock_get_bids);
+        EXPECT_CALL(*buyer, ExecuteInternal(_, _, _, _))
+            .WillRepeatedly(mock_get_bids);
         return buyer;
       };
   auto MockBuyerFactoryCall = [setup_mock_buyer](absl::string_view hostname) {
@@ -850,8 +828,7 @@ TEST_F(SelectAdReactorPASTest, BothPASAndPAInputsMissingIsAnError) {
                                   get_bids_raw_request,
                               const RequestMetadata& metadata,
                               GetBidDoneCallback on_done,
-                              absl::Duration timeout,
-                              RequestConfig request_config) {
+                              absl::Duration timeout) {
     // Expect PAS buyer inputs to be populated correctly in GetBids.
     EXPECT_TRUE(get_bids_raw_request->has_protected_app_signals_buyer_input());
     EXPECT_TRUE(get_bids_raw_request->protected_app_signals_buyer_input()
@@ -869,7 +846,8 @@ TEST_F(SelectAdReactorPASTest, BothPASAndPAInputsMissingIsAnError) {
   };
   auto setup_mock_buyer =
       [&mock_get_bids](std::unique_ptr<BuyerFrontEndAsyncClientMock> buyer) {
-        EXPECT_CALL(*buyer, ExecuteInternal).WillRepeatedly(mock_get_bids);
+        EXPECT_CALL(*buyer, ExecuteInternal(_, _, _, _))
+            .WillRepeatedly(mock_get_bids);
         return buyer;
       };
   auto MockBuyerFactoryCall = [setup_mock_buyer](absl::string_view hostname) {
@@ -915,24 +893,22 @@ TEST_F(SelectAdReactorPASTest,
       CreateSelectAdRequest(kSellerOriginDomain, /*add_interest_group=*/true,
                             /*add_protected_app_signals=*/false);
 
-  auto mock_get_bids =
-      [](std::unique_ptr<GetBidsRequest::GetBidsRawRequest>
-             get_bids_raw_request,
-         const RequestMetadata& metadata, GetBidDoneCallback on_done,
-         absl::Duration timeout,
-         RequestConfig request_config) {  // Expect PAS buyer inputs to not be
-                                          // be populated in GetBids.
-        EXPECT_FALSE(
-            get_bids_raw_request->has_protected_app_signals_buyer_input());
+  auto mock_get_bids = [](std::unique_ptr<GetBidsRequest::GetBidsRawRequest>
+                              get_bids_raw_request,
+                          const RequestMetadata& metadata,
+                          GetBidDoneCallback on_done, absl::Duration timeout) {
+    // Expect PAS buyer inputs to not be be populated in GetBids.
+    EXPECT_FALSE(get_bids_raw_request->has_protected_app_signals_buyer_input());
 
-        // Ensure PA buyer inputs doesn't have the PAS data.
-        EXPECT_FALSE(
-            get_bids_raw_request->buyer_input().has_protected_app_signals());
-        return absl::OkStatus();
-      };
+    // Ensure PA buyer inputs doesn't have the PAS data.
+    EXPECT_FALSE(
+        get_bids_raw_request->buyer_input().has_protected_app_signals());
+    return absl::OkStatus();
+  };
   auto setup_mock_buyer =
       [&mock_get_bids](std::unique_ptr<BuyerFrontEndAsyncClientMock> buyer) {
-        EXPECT_CALL(*buyer, ExecuteInternal).WillRepeatedly(mock_get_bids);
+        EXPECT_CALL(*buyer, ExecuteInternal(_, _, _, _))
+            .WillRepeatedly(mock_get_bids);
         return buyer;
       };
   auto MockBuyerFactoryCall = [setup_mock_buyer](absl::string_view hostname) {
@@ -958,24 +934,22 @@ TEST_F(SelectAdReactorPASTest,
                             /*add_protected_app_signals=*/true,
                             /*app_install_signals=*/"");
 
-  auto mock_get_bids =
-      [](std::unique_ptr<GetBidsRequest::GetBidsRawRequest>
-             get_bids_raw_request,
-         const RequestMetadata& metadata, GetBidDoneCallback on_done,
-         absl::Duration timeout,
-         RequestConfig request_config) {  // Expect PAS buyer inputs to not be
-                                          // be populated in GetBids.
-        EXPECT_FALSE(
-            get_bids_raw_request->has_protected_app_signals_buyer_input());
+  auto mock_get_bids = [](std::unique_ptr<GetBidsRequest::GetBidsRawRequest>
+                              get_bids_raw_request,
+                          const RequestMetadata& metadata,
+                          GetBidDoneCallback on_done, absl::Duration timeout) {
+    // Expect PAS buyer inputs to not be be populated in GetBids.
+    EXPECT_FALSE(get_bids_raw_request->has_protected_app_signals_buyer_input());
 
-        // Ensure PA buyer inputs doesn't have the PAS data.
-        EXPECT_FALSE(
-            get_bids_raw_request->buyer_input().has_protected_app_signals());
-        return absl::OkStatus();
-      };
+    // Ensure PA buyer inputs doesn't have the PAS data.
+    EXPECT_FALSE(
+        get_bids_raw_request->buyer_input().has_protected_app_signals());
+    return absl::OkStatus();
+  };
   auto setup_mock_buyer =
       [&mock_get_bids](std::unique_ptr<BuyerFrontEndAsyncClientMock> buyer) {
-        EXPECT_CALL(*buyer, ExecuteInternal).WillRepeatedly(mock_get_bids);
+        EXPECT_CALL(*buyer, ExecuteInternal(_, _, _, _))
+            .WillRepeatedly(mock_get_bids);
         return buyer;
       };
   auto MockBuyerFactoryCall = [setup_mock_buyer](absl::string_view hostname) {
@@ -1002,8 +976,7 @@ TEST_F(SelectAdReactorPASTest,
                                   get_bids_raw_request,
                               const RequestMetadata& metadata,
                               GetBidDoneCallback on_done,
-                              absl::Duration timeout,
-                              RequestConfig request_config) {
+                              absl::Duration timeout) {
     // Expect PAS buyer inputs to be populated correctly in GetBids.
     EXPECT_TRUE(get_bids_raw_request->has_protected_app_signals_buyer_input());
     EXPECT_TRUE(get_bids_raw_request->protected_app_signals_buyer_input()
@@ -1027,7 +1000,8 @@ TEST_F(SelectAdReactorPASTest,
   };
   auto setup_mock_buyer =
       [&mock_get_bids](std::unique_ptr<BuyerFrontEndAsyncClientMock> buyer) {
-        EXPECT_CALL(*buyer, ExecuteInternal).WillRepeatedly(mock_get_bids);
+        EXPECT_CALL(*buyer, ExecuteInternal(_, _, _, _))
+            .WillRepeatedly(mock_get_bids);
         return buyer;
       };
   auto MockBuyerFactoryCall = [setup_mock_buyer](absl::string_view hostname) {
@@ -1047,19 +1021,20 @@ TEST_F(SelectAdReactorPASTest,
   auto request_with_context = CreateSelectAdRequest(kSellerOriginDomain);
 
   // Setup BFE to return a PA bid and no PAS bid.
-  auto mock_get_bids =
-      [this](std::unique_ptr<GetBidsRequest::GetBidsRawRequest>
-                 get_bids_raw_request,
-             const RequestMetadata& metadata, GetBidDoneCallback on_done,
-             absl::Duration timeout, RequestConfig request_config) {
-        auto response = std::make_unique<GetBidsResponse::GetBidsRawResponse>();
-        response->mutable_bids()->Add(GetTestPAAdWithBid());
-        std::move(on_done)(std::move(response), /* response_metadata= */ {});
-        return absl::OkStatus();
-      };
+  auto mock_get_bids = [this](std::unique_ptr<GetBidsRequest::GetBidsRawRequest>
+                                  get_bids_raw_request,
+                              const RequestMetadata& metadata,
+                              GetBidDoneCallback on_done,
+                              absl::Duration timeout) {
+    auto response = std::make_unique<GetBidsResponse::GetBidsRawResponse>();
+    response->mutable_bids()->Add(GetTestPAAdWithBid());
+    std::move(on_done)(std::move(response));
+    return absl::OkStatus();
+  };
   auto setup_mock_buyer =
       [&mock_get_bids](std::unique_ptr<BuyerFrontEndAsyncClientMock> buyer) {
-        EXPECT_CALL(*buyer, ExecuteInternal).WillRepeatedly(mock_get_bids);
+        EXPECT_CALL(*buyer, ExecuteInternal(_, _, _, _))
+            .WillRepeatedly(mock_get_bids);
         return buyer;
       };
   auto MockBuyerFactoryCall = [setup_mock_buyer](absl::string_view hostname) {
@@ -1087,8 +1062,7 @@ TEST_F(SelectAdReactorPASTest,
                                   get_bids_raw_request,
                               const RequestMetadata& metadata,
                               GetBidDoneCallback on_done,
-                              absl::Duration timeout,
-                              RequestConfig request_config) {
+                              absl::Duration timeout) {
     // Expect no interest groups are present.
     EXPECT_EQ(get_bids_raw_request->buyer_input().interest_groups_size(), 0);
 
@@ -1109,7 +1083,8 @@ TEST_F(SelectAdReactorPASTest,
   };
   auto setup_mock_buyer =
       [&mock_get_bids](std::unique_ptr<BuyerFrontEndAsyncClientMock> buyer) {
-        EXPECT_CALL(*buyer, ExecuteInternal).WillRepeatedly(mock_get_bids);
+        EXPECT_CALL(*buyer, ExecuteInternal(_, _, _, _))
+            .WillRepeatedly(mock_get_bids);
         return buyer;
       };
   auto MockBuyerFactoryCall = [setup_mock_buyer](absl::string_view hostname) {

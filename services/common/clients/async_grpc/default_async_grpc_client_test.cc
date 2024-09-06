@@ -125,7 +125,7 @@ class TestDefaultAsyncGrpcClient
   void SendRpc(const std::string& hpke_secret,
                RawClientParams<MockRequest, MockResponse, MockRawResponse>*
                    params) const override {
-    PS_LOG(INFO) << "SendRpc invoked";
+    PS_VLOG(1) << "SendRpc invoked";
     EXPECT_EQ(params->RequestRef()->request_ciphertext(),
               req_.request_ciphertext());
     absl::Duration actual_timeout =
@@ -166,8 +166,7 @@ TEST(TestDefaultAsyncGrpcClient, SendsMessageWithCorrectParams) {
 
   auto status = client.ExecuteInternal(
       std::make_unique<MockRawRequest>(raw_request), metadata,
-      [](absl::StatusOr<std::unique_ptr<MockRawResponse>> result,
-         ResponseMetadata response_metadata) {},
+      [](absl::StatusOr<std::unique_ptr<MockRawResponse>> result) {},
       timeout_ms);
   CHECK_OK(status);
   notification.WaitForNotification();

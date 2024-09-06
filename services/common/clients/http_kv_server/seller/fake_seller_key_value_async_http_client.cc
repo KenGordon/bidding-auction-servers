@@ -18,7 +18,6 @@
 #include <fstream>
 
 #include "absl/strings/match.h"
-#include "services/common/util/request_response_constants.h"
 
 namespace privacy_sandbox::bidding_auction_servers {
 namespace {
@@ -53,11 +52,10 @@ absl::Status FakeSellerKeyValueAsyncHttpClient::Execute(
   HTTPRequest request =
       SellerKeyValueAsyncHttpClient::BuildSellerKeyValueRequest(
           kv_server_base_address_, metadata, std::move(keys));
-  PS_VLOG(kKVLog) << "FakeSellerKeyValueAsyncHttpClient Request: "
-                  << request.url;
-  PS_VLOG(kKVLog) << "\nFakeSellerKeyValueAsyncHttpClient Headers:\n";
+  PS_VLOG(2) << "FakeSellerKeyValueAsyncHttpClient Request: " << request.url;
+  PS_VLOG(2) << "\nFakeSellerKeyValueAsyncHttpClient Headers:\n";
   for (const auto& header : request.headers) {
-    PS_VLOG(kKVLog) << header;
+    PS_VLOG(2) << header;
   }
   // Below are faked
 
@@ -72,7 +70,7 @@ absl::Status FakeSellerKeyValueAsyncHttpClient::Execute(
       std::make_unique<GetSellerValuesOutput>(
           GetSellerValuesOutput{std::move(kv_response), 0, 0});
   std::move(on_done)(std::move(resultUPtr));
-  PS_VLOG(kKVLog) << "E2E testing received hard coded seller kv request";
+  PS_VLOG(2) << "E2E testing received hard coded seller kv request";
   return absl::OkStatus();
 }
 
