@@ -150,7 +150,7 @@ std::unique_ptr<KeyFetcherManagerInterface> CreateKeyFetcherManager(
   absl::Duration private_key_ttl = absl::Seconds(
       config_client.GetIntParameter(PRIVATE_KEY_CACHE_TTL_SECONDS));
   std::unique_ptr<PrivateKeyFetcherInterface> private_key_fetcher =
-     server_common::PrivateKeyFetcherFactory::Create(
+      server_common::PrivateKeyFetcherFactory::Create(
           primary, {secondary}, private_key_ttl, SystemLogContext());
 
   absl::Duration key_refresh_flow_run_freq = absl::Seconds(
