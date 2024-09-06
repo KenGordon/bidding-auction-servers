@@ -76,4 +76,5 @@ descriptions, please refer to `../modules/buyer/service_vars.tf` and
 1.  Modify all of the variables in buyer.tf or seller.tf.
 1.  `terraform init && terraform apply` from within the buyer or seller directory.
 1.  If everything was configured properly, the stack should be created on Azure.
-1.  Install VN2 (Virtual Node 2) helm chart.
+1.  Install VN2 (Virtual Node 2) helm chart services.
+1.  Install buyer/seller service Helm chart under `services/app/helm`.

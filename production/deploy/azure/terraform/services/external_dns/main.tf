@@ -56,6 +56,10 @@ resource "azurerm_role_assignment" "private_dns_zone_contributor" {
 data "azurerm_kubernetes_cluster" "credentials" {
   name                = var.aks_cluster_name
   resource_group_name = var.resource_group_name
+
+  depends_on = [
+    var.aks_cluster_name
+  ]
 }
 
 provider "helm" {
