@@ -1,4 +1,5 @@
 //   Copyright 2022 Google LLC
+//   Copyright (C) Microsoft Corporation. All rights reserved.
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -37,6 +38,8 @@ absl::StatusOr<server_common::CloudPlatform> StringToCloudPlatform(
     return server_common::CloudPlatform::kGcp;
   } else if (absl::EqualsIgnoreCase(cloud_platform, "AWS")) {
     return server_common::CloudPlatform::kAws;
+  } else if (absl::EqualsIgnoreCase(cloud_platform, "AZURE")) {
+    return server_common::CloudPlatform::kAzure;
   } else if (absl::EqualsIgnoreCase(cloud_platform, "LOCAL")) {
     return server_common::CloudPlatform::kLocal;
   } else {

@@ -1,5 +1,6 @@
 #!/bin/bash
 # Copyright 2023 Google LLC
+# Copyright (C) Microsoft Corporation. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -52,6 +53,9 @@ declare AWS_IMAGE_TAG
 declare GCP_IMAGE_TAG
 declare GCP_IMAGE_REPO
 declare -i GCP_SKIP_IMAGE_UPLOAD=0
+declare AZURE_IMAGE_TAG
+declare AZURE_IMAGE_REPO
+declare -i AZURE_SKIP_IMAGE_UPLOAD=0
 declare -a BUILD_TARGETS=(
   "//tools/secure_invoke/..."
 )
@@ -67,8 +71,8 @@ usage:
   $0 <options>
     --service-path               [REQUIRED] Recognized values: auction_service, bidding_service, buyer_frontend_service, seller_frontend_service.
                                    Use multiple times to specify more than one service.
-    --instance                   [REQUIRED] Recognized values: local, gcp, aws
-    --platform                   [REQUIRED] Recognized values: gcp, aws
+    --instance                   [REQUIRED] Recognized values: local, gcp, aws, azure
+    --platform                   [REQUIRED] Recognized values: gcp, aws, azure
     --e2e                        Run e2e mode
     --build-flavor               Recognized values: prod, non_prod, inference_non_prod. Default: prod
                                    Use non_prod to enable verbose logging.
@@ -89,11 +93,19 @@ If platform is gcp:
     --gcp-image-tag              [REQUIRED if no --gcp-skip-image-upload] (All lowercase) Custom image tag for GCP image.
     --gcp-image-repo             [REQUIRED if no --gcp-skip-image-upload] The target repo for TEE image upload. Ex: us-docker.pkg.dev/my-project-id/services
 
+If platform is azure:
+    --azure-skip-image-upload      Skip AZURE image upload (and sha256 recording).
+    --azure-image-tag              [REQUIRED if no --azure-skip-image-upload] (All lowercase) Custom image tag for Azure image.
+    --azure-image-repo             [REQUIRED if no --azure-skip-image-upload] The target repo for TEE image upload.
+
 environment variables (all optional):
     WORKSPACE                    Set the path to the workspace (repo root)
     BAZEL_STARTUP_ARGS           Additional startup arguments to pass to bazel invocations
     BAZEL_EXTRA_ARGS             Additional command arguments to pass to bazel invocations
     EXTRA_DOCKER_RUN_ARGS        Additional arguments to pass to docker run invocations
+    DOCKER_REGISTRY              Docker registry
+    DOCKER_USER                  Docker user for DOCKER_REGISTRY
+    DOCKER_PASSWORD              Docker password for DOCKER_REGISTRY
 USAGE
   exit ${exitval}
 }
@@ -114,6 +126,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --gcp-skip-image-upload)
       GCP_SKIP_IMAGE_UPLOAD=1
+      shift
+      ;;
+    --azure-skip-image-upload)
+      AZURE_SKIP_IMAGE_UPLOAD=1
       shift
       ;;
     --no-platform-build)
@@ -156,6 +172,14 @@ while [[ $# -gt 0 ]]; do
       GCP_IMAGE_REPO="$2"
       shift 2 || usage
       ;;
+    --azure-image-tag)
+      AZURE_IMAGE_TAG="$2"
+      shift 2 || usage
+      ;;
+    --azure-image-repo)
+      AZURE_IMAGE_REPO="$2"
+      shift 2 || usage
+      ;;
     --verbose)
       VERBOSE=1
       shift
@@ -185,6 +209,18 @@ if [[ ${PLATFORM} = gcp ]]; then
     fi
     if [[ -z ${GCP_IMAGE_REPO} ]]; then
       printf "Error: --gcp-image-repo must be specified\n" &>/dev/stderr
+      usage
+    fi
+  fi
+fi
+if [[ ${PLATFORM} = azure ]]; then
+  if [[ ${AZURE_SKIP_IMAGE_UPLOAD} -eq 0 ]]; then
+    if [[ -z ${AZURE_IMAGE_TAG} ]]; then
+      printf "Error: --azure-image-tag must be specified\n" &>/dev/stderr
+      usage
+    fi
+    if [[ -z ${AZURE_IMAGE_REPO} ]]; then
+      printf "Error: --azure-image-repo must be specified\n" &>/dev/stderr
       usage
     fi
   fi
@@ -297,6 +333,27 @@ function build_service_for_gcp() {
   fi
 }
 
+function build_service_for_azure() {
+  declare -r service="$1"
+  # note: use relative path to dist
+  declare -r docker_image=dist/debian/${service}_image.tar
+  if ! [[ -s ${WORKSPACE}/${docker_image} ]]; then
+    printf "Error: docker image tar file not found: %s\n" "${docker_image}" &>/dev/stderr
+    exit 1
+  fi
+  create_azure_dist "${docker_image}"
+  if [[ ${AZURE_SKIP_IMAGE_UPLOAD} -eq 1 ]]; then
+    printf "==== Skipping default repo image upload. No image_digest will be recorded.  =====\n"
+  else
+    upload_image_to_repo \
+    "${service}" \
+    "${docker_image}" \
+    "${AZURE_IMAGE_REPO}" \
+    "${AZURE_IMAGE_TAG}" \
+    "${BUILD_FLAVOR}"
+  fi
+}
+
 function load_service_image() {
   declare -r service="$1"
   declare -r docker_image=dist/debian/${service}_image.tar
@@ -329,6 +386,13 @@ if [[ ${NO_PLATFORM_BUILD} -eq 0 ]]; then
       source  "${SCRIPT_DIR}"/gcp/lib_gcp_artifacts.sh
       for svc in "${SERVICES[@]}"; do
         build_service_for_gcp "${svc}"
+      done
+    ;;
+
+    azure)
+      source  "${SCRIPT_DIR}"/azure/lib_azure_artifacts.sh
+      for svc in "${SERVICES[@]}"; do
+        build_service_for_azure "${svc}"
       done
     ;;
     *)
