@@ -1,4 +1,5 @@
 // Copyright 2023 Google LLC
+// Copyright (C) Microsoft Corporation. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -75,6 +76,8 @@ CreatePublicKeyFetcher(TrustedServersConfigClient& config_client) {
       server_common::CloudPlatform::kLocal;
 #if defined(CLOUD_PLATFORM_AWS)
   cloud_platform = server_common::CloudPlatform::kAws;
+#elif defined(CLOUD_PLATFORM_AZURE)
+  cloud_platform = server_common::CloudPlatform::kAzure;
 #elif defined(CLOUD_PLATFORM_GCP)
   cloud_platform = server_common::CloudPlatform::kGcp;
 #endif
@@ -92,7 +95,7 @@ std::unique_ptr<KeyFetcherManagerInterface> CreateKeyFetcherManager(
     return std::make_unique<server_common::FakeKeyFetcherManager>();
   }
 
-  google::scp::cpio::PrivateKeyVendingEndpoint primary, secondary;
+  google::scp::cpio::PrivateKeyVendingEndpoint primary;
   primary.account_identity =
       config_client.GetStringParameter(PRIMARY_COORDINATOR_ACCOUNT_IDENTITY);
   primary.private_key_vending_service_endpoint =
@@ -101,34 +104,43 @@ std::unique_ptr<KeyFetcherManagerInterface> CreateKeyFetcherManager(
   primary.service_region =
       config_client.GetStringParameter(PRIMARY_COORDINATOR_REGION);
 
-  secondary.account_identity =
-      config_client.GetStringParameter(SECONDARY_COORDINATOR_ACCOUNT_IDENTITY);
-  secondary.private_key_vending_service_endpoint =
-      config_client.GetStringParameter(
-          SECONDARY_COORDINATOR_PRIVATE_KEY_ENDPOINT);
-  secondary.service_region =
-      config_client.GetStringParameter(SECONDARY_COORDINATOR_REGION);
-
   if (config_client.HasParameter(GCP_PRIMARY_WORKLOAD_IDENTITY_POOL_PROVIDER)) {
-    PS_VLOG(kNoisyInfo)
-        << "Found GCP Workload Identity Pool Provider, proceeding...";
     primary.gcp_private_key_vending_service_cloudfunction_url =
         config_client.GetStringParameter(
             GCP_PRIMARY_KEY_SERVICE_CLOUD_FUNCTION_URL);
     primary.gcp_wip_provider = config_client.GetStringParameter(
         GCP_PRIMARY_WORKLOAD_IDENTITY_POOL_PROVIDER);
+  }
 
-    secondary.gcp_private_key_vending_service_cloudfunction_url =
+  std::vector<google::scp::cpio::PrivateKeyVendingEndpoint> secondaries{};
+  if (config_client.HasParameterWithValue(
+          SECONDARY_COORDINATOR_PRIVATE_KEY_ENDPOINT)) {
+    google::scp::cpio::PrivateKeyVendingEndpoint secondary;
+
+    secondary.account_identity = config_client.GetStringParameter(
+        SECONDARY_COORDINATOR_ACCOUNT_IDENTITY);
+    secondary.private_key_vending_service_endpoint =
         config_client.GetStringParameter(
-            GCP_SECONDARY_KEY_SERVICE_CLOUD_FUNCTION_URL);
-    secondary.gcp_wip_provider = config_client.GetStringParameter(
-        GCP_SECONDARY_WORKLOAD_IDENTITY_POOL_PROVIDER);
+            SECONDARY_COORDINATOR_PRIVATE_KEY_ENDPOINT);
+    secondary.service_region =
+        config_client.GetStringParameter(SECONDARY_COORDINATOR_REGION);
+
+    if (config_client.HasParameter(
+            GCP_PRIMARY_WORKLOAD_IDENTITY_POOL_PROVIDER)) {
+      secondary.gcp_private_key_vending_service_cloudfunction_url =
+          config_client.GetStringParameter(
+              GCP_SECONDARY_KEY_SERVICE_CLOUD_FUNCTION_URL);
+      secondary.gcp_wip_provider = config_client.GetStringParameter(
+          GCP_SECONDARY_WORKLOAD_IDENTITY_POOL_PROVIDER);
+    }
+
+    secondaries.push_back(secondary);
   }
 
   absl::Duration private_key_ttl = absl::Seconds(
       config_client.GetIntParameter(PRIVATE_KEY_CACHE_TTL_SECONDS));
   std::unique_ptr<PrivateKeyFetcherInterface> private_key_fetcher =
-      server_common::PrivateKeyFetcherFactory::Create(primary, {secondary},
+      server_common::PrivateKeyFetcherFactory::Create(primary, secondaries,
                                                       private_key_ttl);
 
   absl::Duration key_refresh_flow_run_freq = absl::Seconds(

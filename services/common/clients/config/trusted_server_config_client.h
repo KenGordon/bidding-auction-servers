@@ -1,4 +1,5 @@
 //  Copyright 2022 Google LLC
+//  Copyright (C) Microsoft Corporation. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -71,6 +72,10 @@ class TrustedServersConfigClient {
 
   // Checks if a parameter is present in the config client.
   bool HasParameter(absl::string_view name) const noexcept;
+
+  // Checks if a parameter is present with a non-empty value in the config
+  // client.
+  bool HasParameterWithValue(absl::string_view name) const noexcept;
 
   // Fetches the string value for the specified config parameter.
   absl::string_view GetStringParameter(absl::string_view name) const noexcept;

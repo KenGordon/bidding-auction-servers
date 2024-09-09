@@ -1,4 +1,5 @@
 // Copyright 2023 Google LLC
+// Copyright (C) Microsoft Corporation. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,21 +34,25 @@ TEST(KeyFetcherUtilsTest, ParseCloudPlatformPublicKeysMap_ValidInput) {
   constexpr absl::string_view platform_format = R"json(
 {
   "GCP": "%s",
-  "AWS": "%s"
+  "AWS": "%s",
+  "Azure": "%s"
 }
 )json";
 
-  std::string per_platform_public_key_endpoints = absl::StrFormat(
-      platform_format, kGCPProdPublicKeyEndpoint, kAWSProdPublicKeyEndpoint);
+  std::string per_platform_public_key_endpoints =
+      absl::StrFormat(platform_format, kGCPProdPublicKeyEndpoint,
+                      kAWSProdPublicKeyEndpoint, kAzureProdPublicKeyEndpoint);
 
   auto map = ParseCloudPlatformPublicKeysMap(per_platform_public_key_endpoints);
   ASSERT_TRUE(map.ok());
-  EXPECT_EQ(map->size(), 2);
+  EXPECT_EQ(map->size(), 3);
 
   EXPECT_EQ((*map)[server_common::CloudPlatform::kGcp][0],
             kGCPProdPublicKeyEndpoint);
   EXPECT_EQ((*map)[server_common::CloudPlatform::kAws][0],
             kAWSProdPublicKeyEndpoint);
+  EXPECT_EQ((*map)[server_common::CloudPlatform::kAzure][0],
+            kAzureProdPublicKeyEndpoint);
 }
 
 TEST(KeyFetcherUtilsTest, ParseCloudPlatformPublicKeysMap_InvalidJson) {
