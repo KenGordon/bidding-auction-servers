@@ -57,4 +57,4 @@ spec:
         operator: "Exists"
         effect: "NoSchedule"
 ---
-{{ end }}
+{{- end }}

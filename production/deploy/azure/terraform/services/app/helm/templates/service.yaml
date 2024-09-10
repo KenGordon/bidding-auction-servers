@@ -31,4 +31,4 @@ spec:
   selector:
     app: {{ .name }}-app
 ---
-{{ end }}
+{{- end }}
