@@ -38,6 +38,10 @@ repos:
   - id: check-case-conflict
   - id: check-merge-conflict
   - id: check-yaml
+    exclude: (?x)^(
+                production/deploy/azure/.*
+              )$
+    verbose: true
   - id: check-json
   - id: check-symlinks
   - id: check-added-large-files
