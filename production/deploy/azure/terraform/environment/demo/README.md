@@ -34,8 +34,8 @@ sources to check in order to gain a full understanding of each flag:
 
 ### Azure Architecture Flags
 
-Running a stack in Azure requires a large number of parameters to be specified by the operator. These
-parameters are all of the variables specified outside of the `runtime_flags` fields. For
+Running a stack in Azure requires a large number of parameters to be specified by the operator.
+These parameters are all of the variables specified outside of the `runtime_flags` fields. For
 descriptions, please refer to `../modules/buyer/service_vars.tf` and
 `../modules/seller/service_vars.tf`. For examples, please refer to `./buyer/buyer.tf` and
 `./seller/seller.tf`.
