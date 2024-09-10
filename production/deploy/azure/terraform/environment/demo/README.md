@@ -11,25 +11,6 @@ at serving as a guide for the operator trying to bring up a fully functioning st
 stack is meant to communicate with a seller ad service and buyer front ends; the buyer stack is
 expected to communicate only with seller front ends.
 
-## Local Setup
-
-Review the public
-[GCP cloud support and deployment guide](https://github.com/privacysandbox/fledge-docs/blob/main/bidding_auction_services_gcp_guide.md).
-This document will be continually updated with all GCP concerns.
-
-### After Following [Initial GCP Setup](https://github.com/privacysandbox/fledge-docs/blob/main/bidding_auction_services_gcp_guide.md#guide-package-deploy-and-run-a-service)
-
-1. Follow the steps in `production/packaging/README.md` to generate and upload docker
-   (cryptographically attestable) docker images. The tag of the images that you provide should match
-   your environment name (see `tee-image-reference` in
-   `production/deploy/gcp/terraform/services/autoscaling/main.tf` to understand how the image path
-   is derived).
-
-1. Run:
-
-    gcloud auth login gcloud beta auth application-default login gcloud config set project <Your
-    project id, found in cloud console>
-
 ## Configuration
 
 Each stack has two major configuration components.
