@@ -70,7 +70,7 @@ oci_image(
 oci_tarball(
     name = "server_docker_tarball",
     image = ":server_docker_image",
-    repo_tags = ["bazel/production/packaging/gcp/auction_service:server_docker_image"],
+    repo_tags = ["bazel/production/packaging/azure/auction_service:server_docker_image"],
 )
 
 container_structure_test(
