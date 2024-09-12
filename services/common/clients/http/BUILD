@@ -59,8 +59,8 @@ cc_test(
     size = "medium",
     srcs = ["multi_curl_http_fetcher_async_test.cc"],
     tags = [
-        "requires-network",
         "flaky",
+        "requires-network",
     ],
     deps = [
         ":multi_curl_http_fetcher_async",
