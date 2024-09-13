@@ -11,49 +11,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-{{- range .Values.services }}
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: {{ .name }}-daemonset
-  namespace: {{ $.Values.namespace }}
-  labels:
-    app: {{ .name }}-imagecache
-spec: 
-  selector:
-    matchLabels:
-      app: {{ .name }}-imagecache
-  template:
-    metadata:
-      labels:
-        app: {{ .name }}-imagecache
-      annotations:
-        microsoft.containerinstance.virtualnode.imagecachepod: "true"
-    spec:
-      dnsPolicy: None
-      dnsConfig:
-        nameservers:
-          - 168.63.129.16
-      containers:
-      - name: {{ .name }}
-        image: {{ $.Values.imageRegistry }}{{ .image }}
-        command: ["tail", "-f", "/dev/null"]
-        env:
-          {{- range .env }}
-          - name: {{ .name }}
-            value: {{ .value | quote }}
-          {{- end }}
-          {{- range $.Values.env }}
-          - name: {{ .name }}
-            value: {{ .value | quote }}
-          {{- end }}
-      restartPolicy: "Always"
-      nodeSelector:
-        type: virtual-kubelet
-        virtualization: virtualnode2
-        container-image:  {{ .image | replace ":" "_" }}
-     tolerations:
-      - key: "virtual-kubelet.io/provider"
-        operator: "Exists"
----
-{{- end }}
+
+# apiVersion: apps/v1
+# kind: DaemonSet
+# metadata:
+#   name: imagecache-daemonset
+#   namespace: {{ $.Values.namespace }}
+#   labels:
+#     app: imagecache
+# spec: 
+#   selector:
+#     matchLabels:
+#       app: imagecache
+#   template:
+#     metadata:
+#       labels:
+#         app: imagecache
+#       annotations:
+#         microsoft.containerinstance.virtualnode.imagecachepod: "true"
+#     spec:
+#       containers:
+#       {{- range $.Values.services }}
+#       - name: {{ .name }}
+#         image: {{ $.Values.imageRegistry }}{{ .image }}
+#       {{- end }}
+#       restartPolicy: "Always"
+#       nodeSelector:
+#         type: virtual-kubelet
+#         virtualization: virtualnode2
+#       tolerations:
+#         - key: "virtual-kubelet.io/provider"
+#           operator: "Exists"
