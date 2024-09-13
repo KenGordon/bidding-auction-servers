@@ -72,7 +72,9 @@ descriptions, please refer to `../modules/buyer/service_vars.tf` and
         ```shell
         helm install -f {path-to-custom-values.yaml} vn2 .
         ```
-1.  Install buyer/seller service Helm chart under `services/app/helm`. 
-    ```shell
-    helm install ba-services .
-    ```
+1.  Install buyer/seller service Helm chart under `services/app/helm`.
+    1. Update the **nodeSelector** in the `values.yaml` file with the **nodeLabels** value in step 8.
+    2. Deploy services.
+        ```shell
+         helm install ba-services .
+        ```
