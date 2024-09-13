@@ -65,3 +65,4 @@ core
 
 # Local Server built/temporary files for Protected Audience integration tests
 tools/debug/pa-integration-tests/local-servers/*.pem
+**/out/**
