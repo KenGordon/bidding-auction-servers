@@ -21,10 +21,14 @@ services:
    image: "bidding_service:eubert-20240828"
    containerPort: 50057
    internalLB: true
+   nodeSelector:
+     container-image: bidding_service_eubert-20240828
  - name: bfe
    replicas: 3
    image: "buyer_frontend_service:eubert-20240828"
    containerPort: 50051
+   nodeSelector:
+     container-image: buyer_frontend_service_eubert-20240828
    env:
      - name: 'BIDDING_SERVER_ADDR'
        value: 'bidding-service.adsapi.microsoft:50057'  
@@ -33,18 +37,18 @@ services:
    image: "auction_service:eubert-20240828"
    containerPort: 50061
    internalLB: true
+   nodeSelector:
+     container-image: auction_service_eubert-20240828
  - name: sfe
    replicas: 3
    image: "seller_frontend_service:eubert-20240828"
    containerPort: 50053
+   nodeSelector:
+     container-image: seller_frontend_service_eubert-20240828
    env:
       - name: 'AUCTION_SERVER_HOST'
         value: 'auction-service.adsapi.microsoft:50061'
 env:
-  # - name: 'BIDDING_SERVER_ADDR'
-  #   value: 'bidding-service.adsapi.microsoft:50057' 
-  # - name: 'AUCTION_SERVER_HOST'
-  #   value: 'auction-service.adsapi.microsoft:50061'   
   - name: 'ENABLE_ENCRYPTION'
     value: 'true'
   - name: 'PRIVATE_KEY_CACHE_TTL_SECONDS'
