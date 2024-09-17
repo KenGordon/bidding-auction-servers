@@ -11,23 +11,4 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-{{ range .Values.services }}
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .name }}-lb
-  namespace: {{ $.Values.namespace }}
-  annotations:
-    {{- if .internalLB }}
-    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    external-dns.alpha.kubernetes.io/hostname: {{ .name }}.{{ $.Values.domain}}
-    external-dns.alpha.kubernetes.io/internal-hostname: {{ .name }}-clusterip.{{ $.Values.domain }}
-    {{- end }}
-spec:
-  type: LoadBalancer
-  ports:
-  - port: {{ .containerPort }}
-  selector:
-    app: {{ .name }}-app
----
-{{ end }}
+

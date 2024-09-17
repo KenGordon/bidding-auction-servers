@@ -14,26 +14,40 @@
 
 namespace: "default"
 domain: "adsapi.microsoft"
-imageRegistry: "privacysandboxdev.azurecr.io"
+imageRegistry: "privacysandboxdev.azurecr.io/services/"
 services:
  - name: bidding-service
    replicas: 3
-   image: "/services/bidding_service:eubert-20240828"
+   image: "bidding_service:eubert-20240828"
    containerPort: 50057
    internalLB: true
+   nodeSelector:
+     container-image: bidding_service_eubert-20240828
  - name: bfe
    replicas: 3
-   image: "/services/buyer_frontend_service:eubert-20240828"
+   image: "buyer_frontend_service:eubert-20240828"
    containerPort: 50051
+   nodeSelector:
+     container-image: buyer_frontend_service_eubert-20240828
+   env:
+     - name: 'BIDDING_SERVER_ADDR'
+       value: 'bidding-service.adsapi.microsoft:50057'  
  - name: auction-service
    replicas: 3
-   image: "/services/auction_service:eubert-20240828"
+   image: "auction_service:eubert-20240828"
    containerPort: 50061
    internalLB: true
+   nodeSelector:
+     container-image: auction_service_eubert-20240828
  - name: sfe
    replicas: 3
-   image: "/services/seller_frontend_service:eubert-20240828"
+   image: "seller_frontend_service:eubert-20240828"
    containerPort: 50053
+   nodeSelector:
+     container-image: seller_frontend_service_eubert-20240828
+   env:
+      - name: 'AUCTION_SERVER_HOST'
+        value: 'auction-service.adsapi.microsoft:50061'
 env:
   - name: 'ENABLE_ENCRYPTION'
     value: 'true'
@@ -77,8 +91,6 @@ env:
     value: '50051'
   - name: 'BUYER_FRONTEND_HEALTHCHECK_PORT'
     value: '50552'
-  - name: 'BIDDING_SERVER_ADDR'
-    value: 'bidding-service.adsapi.microsoft:50057' # change this
   - name: 'BUYER_KV_SERVER_ADDR'
     value: 'https://wonderful-smoke-f7f0a95bd29f428f8933d258d315c801.azurewebsites.net'
   - name: 'GENERATE_BID_TIMEOUT_MS'
@@ -115,8 +127,6 @@ env:
     value: '60000'
   - name: 'SELLER_ORIGIN_DOMAIN'
     value: 'https://securepubads.g.doubleclick.net'
-  - name: 'AUCTION_SERVER_HOST' # change this
-    value: 'auction-service.adsapi.microsoft:50061'
   - name: 'KEY_VALUE_SIGNALS_HOST'
     value: 'https://pubads.g.doubleclick.net/td/sts'
   - name: 'BUYER_SERVER_HOSTS'
