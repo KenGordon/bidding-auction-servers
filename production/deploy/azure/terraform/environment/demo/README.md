@@ -57,24 +57,30 @@ descriptions, please refer to `../modules/buyer/service_vars.tf` and
 1.  Modify all of the variables in buyer.tf or seller.tf.
 1.  `terraform init && terraform apply` from within the buyer or seller directory.
 1.  If everything was configured properly, the stack should be created on Azure.
-1. Generate CCE policies for your workload. 
-   1. Modify the `values.yaml` under `services/app/helm`.
-   2. Run `helm template . --output-dir ./out` to generate manifest yamls.
-   1. Generate the CCE policies for the deployment. `az confcom acipolicygen -k ./out/templates/deployment.yaml`. This will create a base64 encoded string under the `microsoft.containerinstance.virtualnode.ccepolicy` annotation. 
-1.  Create VN2 (Virtual Nodes) this Helm chart. You will need to create a node per CCE policy generated in step 7.
-    1. Create a custom `values.yaml` file and paste the value below. You will use the **nodeLabels** as a **nodeSelector** in step 9.
-        ```yaml
-         standbyPool: 
-            ccePolicy: '{cce-policy-from-step-7}'
-         nodeLabels: 'label1=value1,label2=value2'
-        ```
-    2. Deploy the VN2 node.
-        ```shell
-        helm install -f {path-to-custom-values.yaml} vn2 .
-        ```
+1.  Generate CCE policies for your workload.
+    1. Modify the `values.yaml` under `services/app/helm`.
+    2. Run `helm template . --output-dir ./out` to generate manifest yamls.
+    3. Generate the CCE policies for the deployment.
+       `az confcom acipolicygen -k ./out/templates/deployment.yaml`. This will create a base64
+       encoded string under the `microsoft.containerinstance.virtualnode.ccepolicy` annotation.
+1.  Create VN2 (Virtual Nodes) this Helm chart. You will need to create a node per CCE policy
+    generated in step 7.
+
+    1.  Create a custom `values.yaml` file and paste the value below. You will use the
+        **nodeLabels** as a **nodeSelector** in step 9.
+
+             standbyPool:
+                 ccePolicy: '{cce-policy-from-step-7}'
+             nodeLabels: 'label1=value1,label2=value2'
+
+    2.  Deploy the VN2 node.
+
+            helm install -f {path-to-custom-values.yaml} vn2 .
+
 1.  Install buyer/seller service Helm chart under `services/app/helm`.
-    1. Update the **nodeSelector** in the `values.yaml` file with the **nodeLabels** value in step 8.
-    2. Deploy services.
-        ```shell
-         helm install ba-services .
-        ```
+
+    1.  Update the **nodeSelector** in the `values.yaml` file with the **nodeLabels** value in
+        step 8.
+    2.  Deploy services.
+
+            helm install ba-services .

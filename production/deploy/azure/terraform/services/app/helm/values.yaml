@@ -31,7 +31,7 @@ services:
      container-image: buyer_frontend_service_eubert-20240828
    env:
      - name: 'BIDDING_SERVER_ADDR'
-       value: 'bidding-service.adsapi.microsoft:50057'  
+       value: 'bidding-service.adsapi.microsoft:50057'
  - name: auction-service
    replicas: 3
    image: "auction_service:eubert-20240828"
