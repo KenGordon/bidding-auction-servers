@@ -48,7 +48,6 @@ inline bool IsAllowedPublicKeyUrl(absl::string_view url, bool is_prod_build) {
           // clang-format off
             kGCPProdPublicKeyEndpoint,
             kAWSProdPublicKeyEndpoint,
-            kAzureProdPublicKeyEndpoint,
           // clang-format on
       });
 

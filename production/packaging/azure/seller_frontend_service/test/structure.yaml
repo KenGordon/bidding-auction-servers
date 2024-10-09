@@ -1,4 +1,4 @@
-# Portions Copyright (c) Microsoft Corporation
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,9 +37,14 @@ fileExistenceTests:
     shouldExist: true
     isExecutableBy: any
 
-  - name: envoy
+  - name: envoy-config
     path: /etc/envoy/envoy.yaml
     shouldExist: true
+
+  - name: envoy-binary
+    path: /usr/local/bin/envoy
+    shouldExist: true
+    isExecutableBy: any
 
   - name: ca-certs
     path: /etc/ssl/certs/ca-certificates.crt
