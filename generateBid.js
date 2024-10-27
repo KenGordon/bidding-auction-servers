@@ -1,15 +1,24 @@
-function fibonacci(num) {
-  if (num <= 1) return 1;
-  return fibonacci(num - 1) + fibonacci(num - 2);
-}
+async function generateBid(interestGroup, auctionSignals, perBuyerSignals, trustedBiddingSignals, browserSignals) {
+  // Extract relevant information from signals
+  const { adMetadata } = interestGroup;
+  const { renderUrl, bidAmount } = adMetadata || {};
 
-function generateBid(interestGroup, auctionSignals, perBuyerSignals, trustedBiddingSignals,  deviceSignals) {
-  // Do a random amount of work to generate the price:
-  const bid = fibonacci(Math.floor(Math.random() * 10 + 1));
+  // Set a default bid if no bid amount is provided
+  const bid = bidAmount || 1.0;
 
-    return JSON.stringify({'ad': {"arbitraryMetadataField": 1},
-            'bid': bid,
-            'render': "%s" + interest_group.adRenderIds[0],
-            'adComponents': ["adComponentRenderUrlOne", "adComponentRenderUrlTwo"],
-            'allowComponentAuction': false});
+  // Return bid details in JSON format
+  return JSON.stringify({
+      ad: {
+          renderUrl,
+          metadata: {
+              // Metadata is optional but can be used for additional ad info
+              category: adMetadata.category || "general",
+              advertiser: adMetadata.advertiser || "unknown"
+          }
+      },
+      bid,
+      render: renderUrl,
+      adComponents: interestGroup.adComponents || [], // Optional ad components
+      allowComponentAuction: true // If multi-level auctions are allowed
+  });
 }
