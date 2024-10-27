@@ -6,6 +6,8 @@ async function generateBid(interestGroup, auctionSignals, perBuyerSignals, trust
   // Set a default bid if no bid amount is provided
   const bid = bidAmount || 1.0;
 
+  console.log("Logging from generateBid");
+
   // Return bid details in JSON format
   return JSON.stringify({
       ad: {
@@ -19,6 +21,11 @@ async function generateBid(interestGroup, auctionSignals, perBuyerSignals, trust
       bid,
       render: renderUrl,
       adComponents: interestGroup.adComponents || [], // Optional ad components
-      allowComponentAuction: true // If multi-level auctions are allowed
+      allowComponentAuction: true, // If multi-level auctions are allowed
+      interestGroupName: interestGroup,
+      adCost: 1.0,
+      modellingSignals: 0,
+      bidCurrency: "EUR",
+      privateAggregationContributions: []
   });
 }
