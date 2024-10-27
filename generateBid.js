@@ -9,7 +9,7 @@ async function generateBid(interestGroup, auctionSignals, perBuyerSignals, trust
   console.log("Logging from generateBid");
 
   // Return bid details in JSON format
-  return JSON.stringify({
+  return {
       ad: {
           renderUrl,
           metadata: {
@@ -27,5 +27,5 @@ async function generateBid(interestGroup, auctionSignals, perBuyerSignals, trust
       modellingSignals: 0,
       bidCurrency: "EUR",
       privateAggregationContributions: []
-  });
+  };
 }
