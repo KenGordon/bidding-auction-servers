@@ -7,9 +7,9 @@ function generateBid(interestGroup, auctionSignals, perBuyerSignals, trustedBidd
   // Do a random amount of work to generate the price:
   const bid = fibonacci(Math.floor(Math.random() * 10 + 1));
 
-    return {'ad': {"arbitraryMetadataField": 1},
+    return JSON.stringify({'ad': {"arbitraryMetadataField": 1},
             'bid': bid,
             'render': "%s" + interest_group.adRenderIds[0],
             'adComponents': ["adComponentRenderUrlOne", "adComponentRenderUrlTwo"],
-            'allowComponentAuction': false};
+            'allowComponentAuction': false});
 }
