@@ -21,4 +21,5 @@ export GLOG_stderrthreshold=0
 export GRPC_DNS_RESOLVER=native
 
 # Start the server first.
+echo custom branch ba
 /server/bin/server --init_config_client=true
