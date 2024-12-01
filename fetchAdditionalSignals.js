@@ -57,11 +57,9 @@ function generateBids(interest_groups, auction_signals, buyer_signals, trusted_b
   console.log(fetchAdditionalSignalsResult);
 
   return {
-    render: '%s' + interest_groups.adRenderIds[0],
-    ad: { arbitraryMetadataField: 1 },
-    bid: 10,
-    allowComponentAuction: false,
-  };
+    bid: 0.5,
+    render: "https://example.com/ad"
+  };  
 }
 
 //await generateBid({ adRenderIds: ["A"]});
