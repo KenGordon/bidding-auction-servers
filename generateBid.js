@@ -2,8 +2,7 @@ async function generateBids(interestGroup, auctionSignals, perBuyerSignals, trus
   return {
     ad: {
       name: interestGroup,
-      bidding_signals: trustedBiddingSignals,
-      perBuyerSignals: puerBuyerSignals
+      biddingSignals: trustedBiddingSignals,
     },
     bid: 0.7,
     render: "https://example.com/ad"
